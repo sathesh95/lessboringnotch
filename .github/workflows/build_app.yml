@@ -1,0 +1,58 @@
+name: "Build boringNotch App"
+
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+    branches: [ "**" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build and Package App
+    runs-on: macos-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Show Xcode Version
+        run: xcodebuild -version
+
+      - name: Resolve Swift Package Dependencies
+        run: xcodebuild -resolvePackageDependencies -project boringNotch.xcodeproj
+
+      - name: Build Application
+        run: |
+          xcodebuild clean build \
+            -project boringNotch.xcodeproj \
+            -scheme boringNotch \
+            -configuration Release \
+            -destination "generic/platform=macOS" \
+            -derivedDataPath ./DerivedData \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Package App Bundle
+        run: |
+          APP_PATH=$(find ./DerivedData/Build/Products/Release -name "boringNotch.app" -type d | head -n 1)
+          if [ -z "$APP_PATH" ]; then
+            echo "Error: boringNotch.app not found!"
+            exit 1
+          fi
+          echo "Found App at: $APP_PATH"
+          mkdir -p ./build_output
+          cp -R "$APP_PATH" ./build_output/boringNotch.app
+          cd ./build_output
+          zip -r -y ../boringNotch-App.zip boringNotch.app
+          cd ..
+
+      - name: Upload App Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: boringNotch-App
+          path: boringNotch-App.zip
+          retention-days: 14

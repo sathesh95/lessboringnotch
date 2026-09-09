@@ -51,6 +51,9 @@ struct SettingsView: View {
                 NavigationLink(value: "Shelf") {
                     Label("Shelf", systemImage: "books.vertical")
                 }
+                NavigationLink(value: "Scratchpad") {
+                    Label("Scratchpad", systemImage: "square.and.pencil")
+                }
                 NavigationLink(value: "Shortcuts") {
                     Label("Shortcuts", systemImage: "keyboard")
                 }
@@ -85,6 +88,8 @@ struct SettingsView: View {
                     Charge()
                 case "Shelf":
                     Shelf()
+                case "Scratchpad":
+                    ScratchpadSettings()
                 case "Shortcuts":
                     Shortcuts()
                 case "Extensions":
@@ -1015,6 +1020,29 @@ struct Shelf: View {
         }
         .accentColor(.effectiveAccent)
         .navigationTitle("Shelf")
+    }
+}
+
+struct ScratchpadSettings: View {
+    var body: some View {
+        Form {
+            Section {
+                Defaults.Toggle(key: .boringPad) {
+                    Text("Enable scratchpad")
+                }
+                Defaults.Toggle(key: .openPadByDefault) {
+                    Text("Open scratchpad by default")
+                }
+            } header: {
+                Text("General")
+            } footer: {
+                Text("Use the scratchpad to quickly brainstorm ideas, jot down thoughts, and manage checklists. Type / for Notion-style commands or [] for instant checklists.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+        }
+        .accentColor(.effectiveAccent)
+        .navigationTitle("Scratchpad")
     }
 }
 

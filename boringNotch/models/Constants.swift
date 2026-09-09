@@ -171,6 +171,10 @@ extension Defaults.Keys {
     static let autoRemoveShelfItems = Key<Bool>("autoRemoveShelfItems", default: false)
     static let expandedDragDetection = Key<Bool>("expandedDragDetection", default: true)
     
+    // MARK: Notch Pad (Scratchpad)
+    static let boringPad = Key<Bool>("boringPad", default: true)
+    static let openPadByDefault = Key<Bool>("openPadByDefault", default: false)
+    
     // MARK: Calendar
     static let calendarSelectionState = Key<CalendarSelectionState>("calendarSelectionState", default: .all)
     static let hideAllDayEvents = Key<Bool>("hideAllDayEvents", default: false)
