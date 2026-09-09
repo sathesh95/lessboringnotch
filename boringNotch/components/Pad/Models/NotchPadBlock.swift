@@ -89,4 +89,12 @@ public struct NotchPadBlock: Identifiable, Codable, Hashable, Equatable {
         self.content = content
         self.createdAt = createdAt
     }
+
+    public var isCompleted: Bool {
+        return type.isCompleted
+    }
+
+    public var isTodo: Bool {
+        return type.isTodo
+    }
 }
