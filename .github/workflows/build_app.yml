@@ -51,7 +51,7 @@ jobs:
           cd ..
 
       - name: Upload App Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: boringNotch-App
           path: boringNotch-App.zip
