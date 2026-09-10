@@ -421,6 +421,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 for: NSScreen.main ?? NSScreen.screens.first!, with: viewModel)
             self.window = window
             adjustWindowPosition(changeAlpha: true)
+        } else {
+            adjustWindowPosition(changeAlpha: true)
+        }
+
         setupDragDetectors()
 
         NotificationCenter.default.addObserver(
