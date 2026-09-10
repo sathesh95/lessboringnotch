@@ -67,6 +67,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var isScreenLocked: Bool = false
     private var windowScreenDidChangeObserver: Any?
     private var dragDetectors: [String: DragDetector] = [:] // UUID -> DragDetector
+    private var globalClickMonitor: Any?
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         return false
@@ -83,6 +84,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             screenUnlockedObserver = nil
         }
         MusicManager.shared.destroy()
+        if let monitor = globalClickMonitor {
+            NSEvent.removeMonitor(monitor)
+            globalClickMonitor = nil
+        }
         cleanupDragDetectors()
         cleanupWindows()
         XPCHelperClient.shared.stopMonitoringAccessibilityAuthorization()
@@ -416,11 +421,42 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 for: NSScreen.main ?? NSScreen.screens.first!, with: viewModel)
             self.window = window
             adjustWindowPosition(changeAlpha: true)
-        } else {
-            adjustWindowPosition(changeAlpha: true)
+        setupDragDetectors()
+
+        NotificationCenter.default.addObserver(
+            forName: .escapeKeyPressedInNotch, object: nil, queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                guard let self = self else { return }
+                if Defaults[.showOnAllDisplays] {
+                    self.viewModels.values.forEach { $0.close() }
+                } else {
+                    self.vm.close()
+                }
+            }
         }
 
-        setupDragDetectors()
+        globalClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
+            Task { @MainActor in
+                guard let self = self else { return }
+                guard !SharingStateManager.shared.preventNotchClose else { return }
+                
+                let mouseLocation = NSEvent.mouseLocation
+                if Defaults[.showOnAllDisplays] {
+                    for (uuid, window) in self.windows {
+                        if let viewModel = self.viewModels[uuid], viewModel.notchState == .open {
+                            if !window.frame.contains(mouseLocation) {
+                                viewModel.close()
+                            }
+                        }
+                    }
+                } else if let window = self.window, self.vm.notchState == .open {
+                    if !window.frame.contains(mouseLocation) {
+                        self.vm.close()
+                    }
+                }
+            }
+        }
 
         if coordinator.firstLaunch {
             DispatchQueue.main.async {
@@ -603,6 +639,7 @@ extension Notification.Name {
     static let showOnAllDisplaysChanged = Notification.Name("showOnAllDisplaysChanged")
     static let automaticallySwitchDisplayChanged = Notification.Name("automaticallySwitchDisplayChanged")
     static let expandedDragDetectionChanged = Notification.Name("expandedDragDetectionChanged")
+    static let escapeKeyPressedInNotch = Notification.Name("escapeKeyPressedInNotch")
 }
 
 extension CGRect: @retroactive Hashable {

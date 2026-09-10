@@ -126,7 +126,42 @@ struct NotchPadBlockRow: View {
             .strikethrough(block.isCompleted, color: .gray)
             .focused($focusedID, equals: block.id)
             .onSubmit {
-                vm.insertBlockAfter(id: block.id)
+                if vm.isSlashMenuVisible {
+                    vm.confirmSlashMenuSelection()
+                } else {
+                    vm.insertBlockAfter(id: block.id)
+                }
+            }
+            .onKeyPress(.delete) {
+                if block.content.isEmpty {
+                    vm.handleBackspaceOnEmptyBlock(id: block.id)
+                    return .handled
+                }
+                return .ignored
+            }
+            .onKeyPress(.upArrow) {
+                if vm.isSlashMenuVisible {
+                    vm.moveSlashMenuSelectionUp()
+                    return .handled
+                }
+                vm.focusPreviousBlock(from: block.id)
+                return .handled
+            }
+            .onKeyPress(.downArrow) {
+                if vm.isSlashMenuVisible {
+                    vm.moveSlashMenuSelectionDown()
+                    return .handled
+                }
+                vm.focusNextBlock(from: block.id)
+                return .handled
+            }
+            .onKeyPress(.escape) {
+                if vm.isSlashMenuVisible {
+                    vm.isSlashMenuVisible = false
+                    return .handled
+                }
+                NotificationCenter.default.post(name: .escapeKeyPressedInNotch, object: nil)
+                return .handled
             }
     }
 

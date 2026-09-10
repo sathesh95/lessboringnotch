@@ -109,6 +109,15 @@ class BoringNotchSkyLightWindow: NSPanel {
     
     private var observers: Set<AnyCancellable> = []
     
-    override var canBecomeKey: Bool { false }
+    override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
+    
+    override func keyDown(with event: NSEvent) {
+        // Esc key is keyCode 53
+        if event.keyCode == 53 {
+            NotificationCenter.default.post(name: .escapeKeyPressedInNotch, object: nil)
+            return
+        }
+        super.keyDown(with: event)
+    }
 }

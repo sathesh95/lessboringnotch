@@ -52,17 +52,8 @@ final class NotchPadViewModel: ObservableObject {
     static let shared = NotchPadViewModel()
 
     @Published var blocks: [NotchPadBlock] = []
-    @Published var focusedBlockID: UUID? = nil {
-        didSet {
-            updatePreventCloseState()
-        }
-    }
-
-    @Published var isSlashMenuVisible: Bool = false {
-        didSet {
-            updatePreventCloseState()
-        }
-    }
+    @Published var focusedBlockID: UUID? = nil
+    @Published var isSlashMenuVisible: Bool = false
     @Published var slashMenuBlockID: UUID? = nil
     @Published var slashMenuQuery: String = ""
     @Published var slashMenuSelectedIndex: Int = 0
@@ -78,11 +69,6 @@ final class NotchPadViewModel: ObservableObject {
         if blocks.isEmpty {
             self.blocks = [NotchPadBlock(type: .text, content: "")]
         }
-    }
-
-    private func updatePreventCloseState() {
-        let isActivelyEditing = focusedBlockID != nil || isSlashMenuVisible
-        SharingStateManager.shared.preventNotchClose = isActivelyEditing
     }
 
     // MARK: - Auto-Save
@@ -264,6 +250,34 @@ final class NotchPadViewModel: ObservableObject {
         slashMenuBlockID = nil
         focusedBlockID = targetID
         scheduleAutoSave()
+    }
+
+    func moveSlashMenuSelectionUp() {
+        let count = filteredSlashCommands.count
+        guard count > 0 else { return }
+        slashMenuSelectedIndex = (slashMenuSelectedIndex - 1 + count) % count
+    }
+
+    func moveSlashMenuSelectionDown() {
+        let count = filteredSlashCommands.count
+        guard count > 0 else { return }
+        slashMenuSelectedIndex = (slashMenuSelectedIndex + 1) % count
+    }
+
+    func confirmSlashMenuSelection() {
+        let commands = filteredSlashCommands
+        guard slashMenuSelectedIndex >= 0, slashMenuSelectedIndex < commands.count else { return }
+        applySlashCommand(commands[slashMenuSelectedIndex])
+    }
+
+    func focusPreviousBlock(from currentID: UUID) {
+        guard let index = blocks.firstIndex(where: { $0.id == currentID }), index > 0 else { return }
+        focusedBlockID = blocks[index - 1].id
+    }
+
+    func focusNextBlock(from currentID: UUID) {
+        guard let index = blocks.firstIndex(where: { $0.id == currentID }), index < blocks.count - 1 else { return }
+        focusedBlockID = blocks[index + 1].id
     }
 
     // MARK: - Actions

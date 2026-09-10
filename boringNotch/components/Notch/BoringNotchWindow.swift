@@ -41,10 +41,19 @@ class BoringNotchWindow: NSPanel {
     }
     
     override var canBecomeKey: Bool {
-        false
+        true
     }
     
     override var canBecomeMain: Bool {
         false
+    }
+    
+    override func keyDown(with event: NSEvent) {
+        // Esc key is keyCode 53
+        if event.keyCode == 53 {
+            NotificationCenter.default.post(name: .escapeKeyPressedInNotch, object: nil)
+            return
+        }
+        super.keyDown(with: event)
     }
 }

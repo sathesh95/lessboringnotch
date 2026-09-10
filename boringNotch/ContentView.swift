@@ -353,6 +353,7 @@ struct ContentView: View {
                         NotchPadView()
                     }
                 }
+                .animation(.smooth(duration: 0.25), value: coordinator.currentView)
                 .transition(
                     .scale(scale: 0.8, anchor: .top)
                     .combined(with: .opacity)
