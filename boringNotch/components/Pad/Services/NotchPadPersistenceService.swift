@@ -25,34 +25,48 @@ final class NotchPadPersistenceService {
         encoder.dateEncodingStrategy = .iso8601
     }
 
-    func load() -> [NotchPadBlock] {
+    func load() -> NotchPadData {
         guard let data = try? Data(contentsOf: fileURL) else {
-            return defaultInitialBlocks()
+            return defaultInitialData()
         }
 
+        // Try decoding modern NotchPadData structure
+        if let padData = try? decoder.decode(NotchPadData.self, from: data) {
+            return padData
+        }
+
+        // Fallback: try legacy [NotchPadBlock]
+        if let blocks = try? decoder.decode([NotchPadBlock].self, from: data) {
+            let legacyText = blocks.map { $0.content }.joined(separator: "\n")
+            let todos = blocks.filter { $0.isTodo }
+            return NotchPadData(freeformText: legacyText, checklistItems: todos.isEmpty ? defaultTodos() : todos, mode: .freeform)
+        }
+
+        return defaultInitialData()
+    }
+
+    func save(_ data: NotchPadData) {
         do {
-            let blocks = try decoder.decode([NotchPadBlock].self, from: data)
-            return blocks.isEmpty ? defaultInitialBlocks() : blocks
+            let encoded = try encoder.encode(data)
+            try encoded.write(to: fileURL, options: .atomic)
         } catch {
-            print("⚠️ Failed to decode NotchPad blocks: \(error.localizedDescription)")
-            return defaultInitialBlocks()
+            print("❌ Failed to save NotchPad data: \(error.localizedDescription)")
         }
     }
 
-    func save(_ blocks: [NotchPadBlock]) {
-        do {
-            let data = try encoder.encode(blocks)
-            try data.write(to: fileURL, options: .atomic)
-        } catch {
-            print("❌ Failed to save NotchPad blocks: \(error.localizedDescription)")
-        }
+    private func defaultInitialData() -> NotchPadData {
+        return NotchPadData(
+            freeformText: "",
+            checklistItems: defaultTodos(),
+            mode: .freeform
+        )
     }
 
-    private func defaultInitialBlocks() -> [NotchPadBlock] {
+    private func defaultTodos() -> [NotchPadBlock] {
         return [
-            NotchPadBlock(type: .heading2, content: "Quick Scratchpad & Checklist"),
-            NotchPadBlock(type: .todo(isCompleted: false), content: "Type / to open Notion menu or [] for todo"),
-            NotchPadBlock(type: .text, content: "Brainstorm thoughts, notes, and tasks here...")
+            NotchPadBlock(type: .todo(isCompleted: false), content: "Welcome to Scratchpad!"),
+            NotchPadBlock(type: .todo(isCompleted: false), content: "Click the checkbox to complete a task"),
+            NotchPadBlock(type: .todo(isCompleted: true), content: "Press Return to add the next item")
         ]
     }
 }

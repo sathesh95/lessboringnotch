@@ -98,3 +98,20 @@ public struct NotchPadBlock: Identifiable, Codable, Hashable, Equatable {
         return type.isTodo
     }
 }
+
+public enum NotchPadMode: String, Codable, CaseIterable {
+    case freeform = "Notes"
+    case checklist = "Checklist"
+}
+
+public struct NotchPadData: Codable {
+    public var freeformText: String
+    public var checklistItems: [NotchPadBlock]
+    public var mode: NotchPadMode
+
+    public init(freeformText: String = "", checklistItems: [NotchPadBlock] = [], mode: NotchPadMode = .freeform) {
+        self.freeformText = freeformText
+        self.checklistItems = checklistItems
+        self.mode = mode
+    }
+}
