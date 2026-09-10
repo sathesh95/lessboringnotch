@@ -56,7 +56,7 @@ class BoringViewCoordinator: ObservableObject {
     private var expandingViewDispatch: DispatchWorkItem?
     private var hudEnableTask: Task<Void, Never>?
 
-    @AppStorage("firstLaunch") var firstLaunch: Bool = true
+    @AppStorage("firstLaunch") var firstLaunch: Bool = false
     @AppStorage("showWhatsNew") var showWhatsNew: Bool = true
     @AppStorage("musicLiveActivityEnabled") var musicLiveActivityEnabled: Bool = true
     @AppStorage("currentMicStatus") var currentMicStatus: Bool = true

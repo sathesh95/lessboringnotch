@@ -514,7 +514,6 @@ struct ContentView: View {
     // MARK: - Hover Management
 
     private func handleHover(_ hovering: Bool) {
-        if coordinator.firstLaunch { return }
         hoverTask?.cancel()
         
         if hovering {

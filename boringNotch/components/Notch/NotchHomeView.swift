@@ -426,13 +426,8 @@ struct NotchHomeView: View {
     let albumArtNamespace: Namespace.ID
 
     var body: some View {
-        Group {
-            if !coordinator.firstLaunch {
-                mainContent
-            }
-        }
-        // simplified: use a straightforward opacity transition
-        .transition(.opacity)
+        mainContent
+            .transition(.opacity)
     }
 
     private var shouldShowCamera: Bool {
