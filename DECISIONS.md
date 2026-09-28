@@ -65,3 +65,21 @@ This document records the major architectural, design, and product decisions mad
   - Implement a GitHub Actions workflow (`.github/workflows/build_app.yml`) running on `macos-latest` runners.
   - Automatically resolve SPM dependencies, compile Release targets with ad-hoc signing (`CODE_SIGN_IDENTITY="-"`), package into `.zip`, and upload as an artifact.
 - **Consequences**: Allows building, testing, and distributing custom `.app` builds in under 3 minutes without local Xcode installations or macOS upgrades.
+
+---
+
+## ADR 006: Headless WebKit Playback & InnerTube API Architecture for YouTube Music
+
+- **Date**: 2026-09-28
+- **Status**: Accepted
+- **Context**: The user wanted native YouTube Music search and direct audio playback within the notch, with support for Google login to enable YouTube Premium ad-free streaming. Reverse-engineering raw YouTube video streams (e.g., deciphering throttled audio streams or extracting cipher signatures) is brittle, subject to frequent breaking changes by YouTube, and violates terms of service which can trigger IP bans or account flags.
+- **Decision**:
+  - **Search & Discovery**: Query YouTube Music's native InnerTube JSON API directly via `URLSession` using the official `WEB_REMIX` client context. This yields fast, lightweight, and structured search results for tracks, artists, albums, and thumbnails without launching web views.
+  - **Streaming & Playback**: Embed a headless, lightweight `WKWebView` instance (`YouTubePlayerEngine`) running YouTube's official IFrame Player API with a desktop Safari User-Agent. This delegates stream negotiation, DRM, and premium audio bitrate directly to Apple WebKit and YouTube's official player, completely eliminating bot bans and stream breakage.
+  - **Safe Authentication**: Use an isolated macOS `WKWebsiteDataStore.default()` container via `GoogleSignInSheet`. The user signs in directly to Google's standard web authentication flow. No credentials, tokens, or raw cookies are handled by or stored in Swift code. If the user has YouTube Premium, the session automatically streams ad-free high-quality audio.
+  - **Closed Notch Synchronization**: Wire player status (playback state, track title, artist name, and album artwork) directly into `MusicManager.shared` so that Boring Notch's existing closed-notch marquee, audio spectrum visualizer, and sneak-peek animations work seamlessly without duplicating UI code.
+- **Consequences**:
+  - Rock-solid stability: zero risk of cipher obsolescence or sudden breakage.
+  - Full Google account safety: zero credential exposure.
+  - Full YouTube Premium ad-free audio playback.
+

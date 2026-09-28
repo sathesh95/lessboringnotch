@@ -181,6 +181,11 @@ extension Defaults.Keys {
     static let boringPomodoro = Key<Bool>("boringPomodoro", default: true)
     static let defaultPomodoroDuration = Key<Int>("defaultPomodoroDuration", default: 20)
     static let pomodoroSoundEnabled = Key<Bool>("pomodoroSoundEnabled", default: true)
+
+    // MARK: YouTube Music Tab
+    static let boringYTMusic = Key<Bool>("boringYTMusic", default: true)
+    static let ytMusicSignedEmail = Key<String?>("ytMusicSignedEmail", default: nil)
+    static let ytMusicIsPremium = Key<Bool>("ytMusicIsPremium", default: false)
     
     // MARK: Calendar
     static let calendarSelectionState = Key<CalendarSelectionState>("calendarSelectionState", default: .all)

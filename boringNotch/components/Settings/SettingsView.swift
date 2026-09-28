@@ -57,6 +57,9 @@ struct SettingsView: View {
                 NavigationLink(value: "Pomodoro") {
                     Label("Pomodoro", systemImage: "timer")
                 }
+                NavigationLink(value: "YouTube Music") {
+                    Label("YouTube Music", systemImage: "music.note")
+                }
                 NavigationLink(value: "Shortcuts") {
                     Label("Shortcuts", systemImage: "keyboard")
                 }
@@ -95,6 +98,8 @@ struct SettingsView: View {
                     ScratchpadSettings()
                 case "Pomodoro":
                     PomodoroSettings()
+                case "YouTube Music":
+                    YouTubeMusicSettings()
                 case "Shortcuts":
                     Shortcuts()
                 case "Extensions":
@@ -1116,6 +1121,85 @@ struct PomodoroSettings: View {
         .navigationTitle("Pomodoro")
     }
 }
+
+struct YouTubeMusicSettings: View {
+    @Default(.boringYTMusic) var boringYTMusic
+    @Default(.ytMusicSignedEmail) var signedEmail
+    @Default(.ytMusicIsPremium) var isPremium
+    @State private var showSignInSheet = false
+
+    var body: some View {
+        Form {
+            Section {
+                Defaults.Toggle(key: .boringYTMusic) {
+                    Text("Enable YouTube Music tab")
+                }
+            } header: {
+                Text("General")
+            } footer: {
+                Text("When enabled, the YouTube Music tab appears in the notch navigation bar.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+
+            Section {
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Account Status")
+                            .font(.headline)
+                        if let email = signedEmail {
+                            HStack(spacing: 6) {
+                                Image(systemName: "checkmark.seal.fill")
+                                    .foregroundStyle(isPremium ? .yellow : .green)
+                                Text(email)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                if isPremium {
+                                    Text("Premium")
+                                        .font(.caption.bold())
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 2)
+                                        .background(Capsule().fill(Color.yellow.opacity(0.2)))
+                                        .foregroundStyle(.yellow)
+                                }
+                            }
+                        } else {
+                            Text("Not signed in (ad-supported playback)")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    Spacer()
+
+                    if signedEmail != nil {
+                        Button("Sign Out") {
+                            Defaults[.ytMusicSignedEmail] = nil
+                            Defaults[.ytMusicIsPremium] = false
+                        }
+                        .buttonStyle(.bordered)
+                    } else {
+                        Button("Sign In") {
+                            showSignInSheet = true
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
+                }
+            } header: {
+                Text("Google Account & Premium")
+            } footer: {
+                Text("Signing in securely via Google WebKit allows ad-free playback if you have a YouTube Music or YouTube Premium subscription. Credentials are never accessed directly by Boring Notch.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+        }
+        .sheet(isPresented: $showSignInSheet) {
+            GoogleSignInSheet()
+        }
+        .accentColor(.effectiveAccent)
+        .navigationTitle("YouTube Music")
+    }
+}
+
 
 
 //struct Extensions: View {

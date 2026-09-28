@@ -7,6 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		B0C000000000000000000003 /* InnerTubeTrack.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0C000000000000000000002 /* InnerTubeTrack.swift */; };
+		B0C000000000000000000005 /* InnerTubeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0C000000000000000000004 /* InnerTubeService.swift */; };
+		B0C000000000000000000007 /* YouTubePlayerEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0C000000000000000000006 /* YouTubePlayerEngine.swift */; };
+		B0C000000000000000000009 /* GoogleSignInSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0C000000000000000000008 /* GoogleSignInSheet.swift */; };
+		B0C00000000000000000000B /* YouTubeMusicTabViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0C00000000000000000000A /* YouTubeMusicTabViewModel.swift */; };
+		B0C00000000000000000000D /* YouTubeMusicTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0C00000000000000000000C /* YouTubeMusicTabView.swift */; };
 		B0B000000000000000000003 /* PomodoroViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0B000000000000000000002 /* PomodoroViewModel.swift */; };
 		B0B000000000000000000005 /* PomodoroTimerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0B000000000000000000004 /* PomodoroTimerView.swift */; };
 		B0A000000000000000000004 /* NotchPadBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0A000000000000000000003 /* NotchPadBlock.swift */; };
@@ -189,6 +195,12 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		B0C000000000000000000002 /* InnerTubeTrack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InnerTubeTrack.swift; sourceTree = "<group>"; };
+		B0C000000000000000000004 /* InnerTubeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InnerTubeService.swift; sourceTree = "<group>"; };
+		B0C000000000000000000006 /* YouTubePlayerEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubePlayerEngine.swift; sourceTree = "<group>"; };
+		B0C000000000000000000008 /* GoogleSignInSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleSignInSheet.swift; sourceTree = "<group>"; };
+		B0C00000000000000000000A /* YouTubeMusicTabViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubeMusicTabViewModel.swift; sourceTree = "<group>"; };
+		B0C00000000000000000000C /* YouTubeMusicTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubeMusicTabView.swift; sourceTree = "<group>"; };
 		B0B000000000000000000002 /* PomodoroViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PomodoroViewModel.swift; sourceTree = "<group>"; };
 		B0B000000000000000000004 /* PomodoroTimerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PomodoroTimerView.swift; sourceTree = "<group>"; };
 		B0A000000000000000000003 /* NotchPadBlock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchPadBlock.swift; sourceTree = "<group>"; };
@@ -514,6 +526,7 @@
 				9A0887332C7AFF7E00C160EA /* Tabs */,
 				B186542E2C6F453B000B926A /* Music */,
 				B0B000000000000000000001 /* Pomodoro */,
+				B0C000000000000000000001 /* YouTubeMusic */,
 				14D570BF2C5EA5870011E668 /* AnimatedFace.swift */,
 				14288DE72C6E01C800B9F80C /* ProgressIndicator.swift */,
 				14D570C12C5EAFBF0011E668 /* EmptyState.swift */,
@@ -523,6 +536,51 @@
 				B1F747F82EC7E94000F841DB /* LottieView.swift */,
 			);
 			path = components;
+			sourceTree = "<group>";
+		};
+		B0C000000000000000000001 /* YouTubeMusic */ = {
+			isa = PBXGroup;
+			children = (
+				B0C000000000000000000010 /* Models */,
+				B0C000000000000000000020 /* Services */,
+				B0C000000000000000000030 /* ViewModels */,
+				B0C000000000000000000040 /* Views */,
+			);
+			path = YouTubeMusic;
+			sourceTree = "<group>";
+		};
+		B0C000000000000000000010 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				B0C000000000000000000002 /* InnerTubeTrack.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		B0C000000000000000000020 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				B0C000000000000000000004 /* InnerTubeService.swift */,
+				B0C000000000000000000006 /* YouTubePlayerEngine.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		B0C000000000000000000030 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				B0C00000000000000000000A /* YouTubeMusicTabViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		B0C000000000000000000040 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				B0C000000000000000000008 /* GoogleSignInSheet.swift */,
+				B0C00000000000000000000C /* YouTubeMusicTabView.swift */,
+			);
+			path = Views;
 			sourceTree = "<group>";
 		};
 		B0B000000000000000000001 /* Pomodoro */ = {
@@ -1067,6 +1125,12 @@
 				B0A000000000000000000011 /* NotchPadView.swift in Sources */,
 				B0B000000000000000000003 /* PomodoroViewModel.swift in Sources */,
 				B0B000000000000000000005 /* PomodoroTimerView.swift in Sources */,
+				B0C000000000000000000003 /* InnerTubeTrack.swift in Sources */,
+				B0C000000000000000000005 /* InnerTubeService.swift in Sources */,
+				B0C000000000000000000007 /* YouTubePlayerEngine.swift in Sources */,
+				B0C000000000000000000009 /* GoogleSignInSheet.swift in Sources */,
+				B0C00000000000000000000B /* YouTubeMusicTabViewModel.swift in Sources */,
+				B0C00000000000000000000D /* YouTubeMusicTabView.swift in Sources */,
 				1132E5142E777B920068732D /* YouTubeMusicNetworking.swift in Sources */,
 				1132E5122E777B6E0068732D /* YouTubeMusicModels.swift in Sources */,
 				11CFC65F2E097F2F00748C80 /* OnboardingView.swift in Sources */,

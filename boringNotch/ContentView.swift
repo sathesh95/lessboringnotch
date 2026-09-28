@@ -383,6 +383,8 @@ struct ContentView: View {
                         NotchPadView()
                     case .pomodoro:
                         PomodoroTimerView()
+                    case .ytMusic:
+                        YouTubeMusicTabView()
                     }
                 }
                 .animation(.smooth(duration: 0.25), value: coordinator.currentView)
@@ -758,7 +760,8 @@ struct ContentView: View {
     private func handleUpGesture(translation: CGFloat, phase: NSEvent.Phase) {
         guard vm.notchState == .open,
               !vm.isHoveringCalendar,
-              coordinator.currentView != .pad else {
+              coordinator.currentView != .pad,
+              coordinator.currentView != .ytMusic else {
             if gestureProgress != .zero {
                 withAnimation(animationSpring) {
                     gestureProgress = .zero
