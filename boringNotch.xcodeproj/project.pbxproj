@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		B0B000000000000000000003 /* PomodoroViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0B000000000000000000002 /* PomodoroViewModel.swift */; };
+		B0B000000000000000000005 /* PomodoroTimerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0B000000000000000000004 /* PomodoroTimerView.swift */; };
 		B0A000000000000000000004 /* NotchPadBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0A000000000000000000003 /* NotchPadBlock.swift */; };
 		B0A000000000000000000007 /* NotchPadPersistenceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0A000000000000000000006 /* NotchPadPersistenceService.swift */; };
 		B0A00000000000000000000A /* NotchPadViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0A000000000000000000009 /* NotchPadViewModel.swift */; };
@@ -187,6 +189,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		B0B000000000000000000002 /* PomodoroViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PomodoroViewModel.swift; sourceTree = "<group>"; };
+		B0B000000000000000000004 /* PomodoroTimerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PomodoroTimerView.swift; sourceTree = "<group>"; };
 		B0A000000000000000000003 /* NotchPadBlock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchPadBlock.swift; sourceTree = "<group>"; };
 		B0A000000000000000000006 /* NotchPadPersistenceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchPadPersistenceService.swift; sourceTree = "<group>"; };
 		B0A000000000000000000009 /* NotchPadViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchPadViewModel.swift; sourceTree = "<group>"; };
@@ -509,6 +513,7 @@
 				B186542F2C6F455E000B926A /* Notch */,
 				9A0887332C7AFF7E00C160EA /* Tabs */,
 				B186542E2C6F453B000B926A /* Music */,
+				B0B000000000000000000001 /* Pomodoro */,
 				14D570BF2C5EA5870011E668 /* AnimatedFace.swift */,
 				14288DE72C6E01C800B9F80C /* ProgressIndicator.swift */,
 				14D570C12C5EAFBF0011E668 /* EmptyState.swift */,
@@ -518,6 +523,15 @@
 				B1F747F82EC7E94000F841DB /* LottieView.swift */,
 			);
 			path = components;
+			sourceTree = "<group>";
+		};
+		B0B000000000000000000001 /* Pomodoro */ = {
+			isa = PBXGroup;
+			children = (
+				B0B000000000000000000002 /* PomodoroViewModel.swift */,
+				B0B000000000000000000004 /* PomodoroTimerView.swift */,
+			);
+			path = Pomodoro;
 			sourceTree = "<group>";
 		};
 		B0A000000000000000000001 /* Pad */ = {
@@ -1051,6 +1065,8 @@
 				B0A00000000000000000000D /* NotchPadSlashMenu.swift in Sources */,
 				B0A00000000000000000000F /* NotchPadBlockRow.swift in Sources */,
 				B0A000000000000000000011 /* NotchPadView.swift in Sources */,
+				B0B000000000000000000003 /* PomodoroViewModel.swift in Sources */,
+				B0B000000000000000000005 /* PomodoroTimerView.swift in Sources */,
 				1132E5142E777B920068732D /* YouTubeMusicNetworking.swift in Sources */,
 				1132E5122E777B6E0068732D /* YouTubeMusicModels.swift in Sources */,
 				11CFC65F2E097F2F00748C80 /* OnboardingView.swift in Sources */,

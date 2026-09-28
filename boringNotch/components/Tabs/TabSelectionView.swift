@@ -19,6 +19,7 @@ struct TabSelectionView: View {
     @ObservedObject var coordinator = BoringViewCoordinator.shared
     @Default(.boringShelf) var boringShelf
     @Default(.boringPad) var boringPad
+    @Default(.boringPomodoro) var boringPomodoro
     @Namespace var animation
 
     var visibleTabs: [TabModel] {
@@ -28,6 +29,9 @@ struct TabSelectionView: View {
         }
         if boringPad {
             list.append(TabModel(label: "Pad", icon: "square.and.pencil", view: .pad))
+        }
+        if boringPomodoro {
+            list.append(TabModel(label: "Timer", icon: "timer", view: .pomodoro))
         }
         return list
     }

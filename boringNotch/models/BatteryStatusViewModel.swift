@@ -1,4 +1,5 @@
 import Cocoa
+import Combine
 import Defaults
 import Foundation
 import IOKit.ps
@@ -22,6 +23,32 @@ class BatteryStatusViewModel: ObservableObject {
     @Published private(set) var timeToFullCharge: Int = 0
     @Published private(set) var statusText: String = ""
 
+    // MARK: - Critical Battery Alert (<10%)
+    @Published private(set) var isCriticalBattery: Bool = false
+    @Published private(set) var currentCriticalMessage: String = "Charge your laptop you moron! 😡"
+    private var messageRotationTimer: Timer?
+    private var cancellables: Set<AnyCancellable> = []
+
+    static let criticalBatteryMessages: [String] = [
+        "Charge your laptop you moron! 😡",
+        "Don't Let me Die 😔",
+        "Feed me electricity! ⚡️😭",
+        "I'm literally dying right now... 🪫💀",
+        "Plug me in, I'm begging you! 🥺🔌",
+        "Find a charger NOW! 🚨😱",
+        "Darkness is approaching... 🪫🌑",
+        "Save your work or weep! ⚠️💾",
+        "10% and fading fast! 🔌🏃💨",
+        "I have so much left to live for! 😭⚡️"
+    ]
+
+    var displayedBatteryLevel: Int {
+        if Defaults[.testCriticalBatteryAlert] && (levelBattery > 10 || isPluggedIn) {
+            return 7
+        }
+        return Int(levelBattery)
+    }
+
     private let managerBattery = BatteryActivityManager.shared
     private var managerBatteryId: Int?
 
@@ -32,6 +59,65 @@ class BatteryStatusViewModel: ObservableObject {
     private init() {
         setupPowerStatus()
         setupMonitor()
+        setupPreferenceObservers()
+        checkCriticalBatteryStatus()
+    }
+
+    private func setupPreferenceObservers() {
+        Defaults.publisher(.testCriticalBatteryAlert)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.checkCriticalBatteryStatus()
+            }
+            .store(in: &cancellables)
+
+        Defaults.publisher(.criticalBatteryWarning)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.checkCriticalBatteryStatus()
+            }
+            .store(in: &cancellables)
+    }
+
+    func rotateCriticalMessage() {
+        let pool = Self.criticalBatteryMessages.filter { $0 != currentCriticalMessage }
+        if let next = pool.randomElement() {
+            withAnimation(.smooth) {
+                currentCriticalMessage = next
+            }
+        }
+    }
+
+    func checkCriticalBatteryStatus() {
+        let isSimulated = Defaults[.testCriticalBatteryAlert]
+        let isRealLow = levelBattery > 0 && levelBattery <= 10 && !isPluggedIn && !isCharging && Defaults[.criticalBatteryWarning]
+        let shouldAlert = isSimulated || isRealLow
+
+        if shouldAlert != isCriticalBattery {
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
+                self.isCriticalBattery = shouldAlert
+            }
+            if shouldAlert {
+                rotateCriticalMessage()
+                startRotatingCriticalMessages()
+            } else {
+                stopRotatingCriticalMessages()
+            }
+        }
+    }
+
+    private func startRotatingCriticalMessages() {
+        stopRotatingCriticalMessages()
+        messageRotationTimer = Timer.scheduledTimer(withTimeInterval: 8.0, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                self?.rotateCriticalMessage()
+            }
+        }
+    }
+
+    private func stopRotatingCriticalMessages() {
+        messageRotationTimer?.invalidate()
+        messageRotationTimer = nil
     }
 
     /// Sets up the initial power status by fetching battery information
@@ -58,12 +144,14 @@ class BatteryStatusViewModel: ObservableObject {
                 self.isPluggedIn = isPluggedIn
                 self.statusText = isPluggedIn ? "Plugged In" : "Unplugged"
                 self.notifyImportanChangeStatus()
+                self.checkCriticalBatteryStatus()
             }
 
         case .batteryLevelChanged(let level):
             print("🔋 Battery level: \(Int(level))%")
             withAnimation {
                 self.levelBattery = level
+                self.checkCriticalBatteryStatus()
             }
 
         case .lowPowerModeChanged(let isEnabled):
@@ -85,6 +173,7 @@ class BatteryStatusViewModel: ObservableObject {
                     isCharging
                     ? "Charging battery"
                     : (self.levelBattery < self.maxCapacity ? "Not charging" : "Full charge")
+                self.checkCriticalBatteryStatus()
             }
 
         case .timeToFullChargeChanged(let time):
@@ -115,6 +204,7 @@ class BatteryStatusViewModel: ObservableObject {
             self.timeToFullCharge = batteryInfo.timeToFullCharge
             self.maxCapacity = batteryInfo.maxCapacity
             self.statusText = batteryInfo.isPluggedIn ? "Plugged In" : "Unplugged"
+            self.checkCriticalBatteryStatus()
         }
     }
 
@@ -129,6 +219,8 @@ class BatteryStatusViewModel: ObservableObject {
 
     deinit {
         print("🔌 Cleaning up battery monitoring...")
+        stopRotatingCriticalMessages()
+        cancellables.removeAll()
         if let managerBatteryId: Int = managerBatteryId {
             managerBattery.removeObserver(byId: managerBatteryId)
         }

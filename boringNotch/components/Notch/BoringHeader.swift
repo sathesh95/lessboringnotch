@@ -11,12 +11,13 @@ import SwiftUI
 struct BoringHeader: View {
     @EnvironmentObject var vm: BoringViewModel
     @ObservedObject var batteryModel = BatteryStatusViewModel.shared
+    @ObservedObject var pomodoroVM = PomodoroViewModel.shared
     @ObservedObject var coordinator = BoringViewCoordinator.shared
     @StateObject var tvm = ShelfStateViewModel.shared
     var body: some View {
         HStack(spacing: 0) {
             HStack {
-                if (!tvm.isEmpty || coordinator.alwaysShowTabs) && (Defaults[.boringShelf] || Defaults[.boringPad]) {
+                if (!tvm.isEmpty || coordinator.alwaysShowTabs) && (Defaults[.boringShelf] || Defaults[.boringPad] || Defaults[.boringPomodoro]) {
                     TabSelectionView()
                 } else if vm.notchState == .open {
                     EmptyView()
@@ -29,7 +30,11 @@ struct BoringHeader: View {
 
             if vm.notchState == .open {
                 Rectangle()
-                    .fill(NSScreen.screen(withUUID: coordinator.selectedScreenUUID)?.safeAreaInsets.top ?? 0 > 0 ? .black : .clear)
+                    .fill(NSScreen.screen(withUUID: coordinator.selectedScreenUUID)?.safeAreaInsets.top ?? 0 > 0
+                          ? (batteryModel.isCriticalBattery
+                             ? Color(red: 0.85, green: 0.1, blue: 0.1)
+                             : (pomodoroVM.isPulsingGreen ? Color(red: 0.15, green: 0.75, blue: 0.35) : .black))
+                          : .clear)
                     .frame(width: vm.closedNotchSize.width)
                     .mask {
                         NotchShape()

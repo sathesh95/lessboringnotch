@@ -7,6 +7,7 @@ import SwiftUI
 
 struct NotchPadView: View {
     @StateObject private var vm = NotchPadViewModel.shared
+    @EnvironmentObject private var boringVM: BoringViewModel
     @FocusState private var isNotesFocused: Bool
     @FocusState private var focusedTodoID: UUID?
 
@@ -57,6 +58,25 @@ struct NotchPadView: View {
                 )
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onAppear {
+            boringVM.claimKeyFocus()
+            if vm.mode == .freeform {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    isNotesFocused = true
+                }
+            }
+        }
+        .onTapGesture {
+            boringVM.claimKeyFocus()
+        }
+        .onChange(of: vm.mode) { _, newMode in
+            boringVM.claimKeyFocus()
+            if newMode == .freeform {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                    isNotesFocused = true
+                }
+            }
+        }
     }
 
     // MARK: - Header Toolbar
@@ -224,6 +244,10 @@ struct NotchPadView: View {
                 .foregroundStyle(.white.opacity(0.92))
                 .focused($isNotesFocused)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .onKeyPress(.escape) {
+                    NotificationCenter.default.post(name: .escapeKeyPressedInNotch, object: nil)
+                    return .handled
+                }
         }
         .padding(4)
     }

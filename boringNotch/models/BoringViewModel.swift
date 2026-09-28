@@ -67,7 +67,25 @@ class BoringViewModel: NSObject, ObservableObject {
             .store(in: &cancellables)
         
         setupDetectorObserver()
+        setupPomodoroObserver()
     }
+
+    private func setupPomodoroObserver() {
+        PomodoroViewModel.shared.$isCompleted
+            .removeDuplicates()
+            .receive(on: RunLoop.main)
+            .sink { [weak self] isCompleted in
+                guard let self = self else { return }
+                if isCompleted && self.notchState == .closed {
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                        BoringViewCoordinator.shared.currentView = .pomodoro
+                        self.open()
+                    }
+                }
+            }
+            .store(in: &cancellables)
+    }
+    
     
     private func setupDetectorObserver() {
         // Publisher for the user’s fullscreen detection setting
@@ -100,6 +118,11 @@ class BoringViewModel: NSObject, ObservableObject {
                 }
             }
             .store(in: &cancellables)
+    }
+
+    var hasPhysicalNotch: Bool {
+        let currentScreen = screenUUID.flatMap { NSScreen.screen(withUUID: $0) } ?? NSScreen.main
+        return (currentScreen?.safeAreaInsets.top ?? 0) > 0
     }
 
     // Computed property for effective notch height
@@ -195,6 +218,10 @@ class BoringViewModel: NSObject, ObservableObject {
         
         // Force music information update when notch is opened
         MusicManager.shared.forceUpdate()
+
+        if coordinator.currentView == .pad {
+            claimKeyFocus()
+        }
     }
 
     func close() {
@@ -209,6 +236,9 @@ class BoringViewModel: NSObject, ObservableObject {
         self.coordinator.sneakPeek.show = false
         self.edgeAutoOpenActive = false
 
+        // Yield key window status and deactivate accessory app so previous app regains focus smoothly
+        NSApp.deactivate()
+
         // Set the current view to shelf if it contains files and the user enables openShelfByDefault
         // Otherwise, check openPadByDefault, or fallback to home
         if !ShelfStateViewModel.shared.isEmpty && Defaults[.openShelfByDefault] {
@@ -217,6 +247,20 @@ class BoringViewModel: NSObject, ObservableObject {
             coordinator.currentView = .pad
         } else if !coordinator.openLastTabByDefault {
             coordinator.currentView = .home
+        }
+    }
+
+    @MainActor
+    func claimKeyFocus() {
+        NSApp.activate(ignoringOtherApps: true)
+        if let uuid = screenUUID {
+            if let targetWindow = NSApp.windows.first(where: { ($0 as? BoringNotchSkyLightWindow) != nil && $0.screen?.displayUUID == uuid }) {
+                targetWindow.makeKey()
+                return
+            }
+        }
+        if let fallbackWindow = NSApp.windows.first(where: { $0 is BoringNotchSkyLightWindow || $0 is BoringNotchWindow }) {
+            fallbackWindow.makeKey()
         }
     }
 

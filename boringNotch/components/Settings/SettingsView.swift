@@ -54,6 +54,9 @@ struct SettingsView: View {
                 NavigationLink(value: "Scratchpad") {
                     Label("Scratchpad", systemImage: "square.and.pencil")
                 }
+                NavigationLink(value: "Pomodoro") {
+                    Label("Pomodoro", systemImage: "timer")
+                }
                 NavigationLink(value: "Shortcuts") {
                     Label("Shortcuts", systemImage: "keyboard")
                 }
@@ -90,6 +93,8 @@ struct SettingsView: View {
                     Shelf()
                 case "Scratchpad":
                     ScratchpadSettings()
+                case "Pomodoro":
+                    PomodoroSettings()
                 case "Shortcuts":
                     Shortcuts()
                 case "Extensions":
@@ -375,6 +380,18 @@ struct Charge: View {
                 }
             } header: {
                 Text("Battery Information")
+            }
+            Section {
+                Defaults.Toggle(key: .criticalBatteryWarning) {
+                    Text("Critical battery red alert (<10%)")
+                }
+                Defaults.Toggle(key: .testCriticalBatteryAlert) {
+                    Text("Preview critical battery alert")
+                }
+            } header: {
+                Text("Critical Battery Alert")
+            } footer: {
+                Text("Turns the notch completely red with urgent messages when battery drops below 10%.")
             }
         }
         .onAppear {
@@ -1045,6 +1062,61 @@ struct ScratchpadSettings: View {
         .navigationTitle("Scratchpad")
     }
 }
+
+struct PomodoroSettings: View {
+    @ObservedObject var pomodoroVM = PomodoroViewModel.shared
+    @Default(.defaultPomodoroDuration) var defaultPomodoroDuration
+
+    var body: some View {
+        Form {
+            Section {
+                Defaults.Toggle(key: .boringPomodoro) {
+                    Text("Enable Pomodoro timer")
+                }
+                Defaults.Toggle(key: .pomodoroSoundEnabled) {
+                    Text("Play completion sound")
+                }
+            } header: {
+                Text("General")
+            } footer: {
+                Text("When enabled, the Pomodoro tab appears in the notch navigation bar.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+
+            Section {
+                Picker("Default Duration", selection: $defaultPomodoroDuration) {
+                    Text("10 minutes").tag(10)
+                    Text("20 minutes").tag(20)
+                    Text("30 minutes").tag(30)
+                }
+            } header: {
+                Text("Presets")
+            }
+
+            Section {
+                Button(action: {
+                    pomodoroVM.triggerTestCelebration()
+                }) {
+                    HStack {
+                        Image(systemName: "sparkles")
+                            .foregroundStyle(.green)
+                        Text("Preview Completion Pulse & Sound")
+                    }
+                }
+            } header: {
+                Text("Preview")
+            } footer: {
+                Text("Triggers a test celebration cycle with a glowing green pulse, completion chime, and celebratory message.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+        }
+        .accentColor(.effectiveAccent)
+        .navigationTitle("Pomodoro")
+    }
+}
+
 
 //struct Extensions: View {
 //    @State private var effectTrigger: Bool = false

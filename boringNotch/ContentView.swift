@@ -21,6 +21,7 @@ struct ContentView: View {
     @ObservedObject var coordinator = BoringViewCoordinator.shared
     @ObservedObject var musicManager = MusicManager.shared
     @ObservedObject var batteryModel = BatteryStatusViewModel.shared
+    @ObservedObject var pomodoroVM = PomodoroViewModel.shared
     @ObservedObject var brightnessManager = BrightnessManager.shared
     @ObservedObject var volumeManager = VolumeManager.shared
     @State private var hoverTask: Task<Void, Never>?
@@ -61,7 +62,19 @@ struct ContentView: View {
     private var computedChinWidth: CGFloat {
         var chinWidth: CGFloat = vm.closedNotchSize.width
 
-        if coordinator.expandingView.type == .battery && coordinator.expandingView.show
+        if batteryModel.isCriticalBattery && vm.notchState == .closed {
+            if vm.hasPhysicalNotch {
+                chinWidth = vm.closedNotchSize.width + 320
+            } else {
+                chinWidth = 420
+            }
+        } else if (pomodoroVM.isCompleted || pomodoroVM.state == .running) && vm.notchState == .closed {
+            if vm.hasPhysicalNotch {
+                chinWidth = vm.closedNotchSize.width + (pomodoroVM.isCompleted ? 320 : 180)
+            } else {
+                chinWidth = pomodoroVM.isCompleted ? 400 : 260
+            }
+        } else if coordinator.expandingView.type == .battery && coordinator.expandingView.show
             && vm.notchState == .closed && Defaults[.showPowerStatusNotifications]
         {
             chinWidth = 640
@@ -100,17 +113,30 @@ struct ContentView: View {
                         : cornerRadiusInsets.closed.bottom
                     )
                     .padding([.horizontal, .bottom], vm.notchState == .open ? 12 : 0)
-                    .background(.black)
+                    .background(
+                        batteryModel.isCriticalBattery
+                            ? Color(red: 0.85, green: 0.1, blue: 0.1)
+                            : (pomodoroVM.isPulsingGreen ? Color(red: 0.15, green: 0.75, blue: 0.35) : .black)
+                    )
                     .clipShape(currentNotchShape)
                     .overlay(alignment: .top) {
                         Rectangle()
-                            .fill(.black)
+                            .fill(
+                                batteryModel.isCriticalBattery
+                                    ? Color(red: 0.85, green: 0.1, blue: 0.1)
+                                    : (pomodoroVM.isPulsingGreen ? Color(red: 0.15, green: 0.75, blue: 0.35) : .black)
+                            )
                             .frame(height: 1)
                             .padding(.horizontal, topCornerRadius)
                     }
                     .shadow(
-                        color: ((vm.notchState == .open || isHovering) && Defaults[.enableShadow])
-                            ? .black.opacity(0.7) : .clear, radius: Defaults[.cornerRadiusScaling] ? 6 : 4
+                        color: batteryModel.isCriticalBattery
+                            ? Color.red.opacity(0.85)
+                            : (pomodoroVM.isPulsingGreen
+                                ? Color.green.opacity(0.85)
+                                : (((vm.notchState == .open || isHovering) && Defaults[.enableShadow])
+                                    ? .black.opacity(0.7) : .clear)),
+                        radius: (batteryModel.isCriticalBattery || pomodoroVM.isPulsingGreen) ? 12 : (Defaults[.cornerRadiusScaling] ? 6 : 4)
                     )
                     .padding(
                         .bottom,
@@ -257,7 +283,11 @@ struct ContentView: View {
                     .padding(.top, 40)
                     Spacer()
                 } else {
-                    if coordinator.expandingView.type == .battery && coordinator.expandingView.show
+                    if batteryModel.isCriticalBattery && vm.notchState == .closed {
+                        CriticalBatteryBannerView()
+                    } else if (pomodoroVM.isCompleted || pomodoroVM.state == .running) && vm.notchState == .closed {
+                        PomodoroClosedBannerView()
+                    } else if coordinator.expandingView.type == .battery && coordinator.expandingView.show
                         && vm.notchState == .closed && Defaults[.showPowerStatusNotifications]
                     {
                         HStack(spacing: 0) {
@@ -351,6 +381,8 @@ struct ContentView: View {
                         ShelfView()
                     case .pad:
                         NotchPadView()
+                    case .pomodoro:
+                        PomodoroTimerView()
                     }
                 }
                 .animation(.smooth(duration: 0.25), value: coordinator.currentView)
@@ -366,6 +398,145 @@ struct ContentView: View {
         }
         .onDrop(of: [.fileURL, .url, .utf8PlainText, .plainText, .data], delegate: GeneralDropTargetDelegate(isTargeted: $vm.generalDropTargeting))
     }
+
+    @ViewBuilder
+    func CriticalBatteryBannerView() -> some View {
+        if vm.hasPhysicalNotch {
+            HStack(spacing: 0) {
+                HStack(spacing: 6) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(.white)
+                    Text(batteryModel.currentCriticalMessage)
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.leading, 10)
+
+                Rectangle()
+                    .fill(Color.clear)
+                    .frame(width: vm.closedNotchSize.width + 10)
+
+                HStack(spacing: 4) {
+                    Text("\(batteryModel.displayedBatteryLevel)%")
+                        .font(.system(size: 11, weight: .heavy, design: .rounded))
+                        .foregroundStyle(.white)
+                    Image(systemName: "battery.0")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(.white)
+                }
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                .padding(.trailing, 10)
+            }
+            .frame(height: vm.effectiveClosedNotchHeight, alignment: .center)
+        } else {
+            HStack(spacing: 8) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(.white)
+
+                Text(batteryModel.currentCriticalMessage)
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+
+                Text("\(batteryModel.displayedBatteryLevel)%")
+                    .font(.system(size: 11, weight: .heavy, design: .rounded))
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Capsule().fill(Color.white.opacity(0.25)))
+                    .foregroundStyle(.white)
+            }
+            .frame(height: vm.effectiveClosedNotchHeight, alignment: .center)
+            .padding(.horizontal, 14)
+        }
+    }
+
+    @ViewBuilder
+    func PomodoroClosedBannerView() -> some View {
+        if vm.hasPhysicalNotch {
+            HStack(spacing: 0) {
+                HStack(spacing: 6) {
+                    if pomodoroVM.isCompleted {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(.white)
+                        Text(pomodoroVM.celebrationMessage)
+                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                            .foregroundStyle(.white)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                    } else {
+                        Image(systemName: "timer")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(.orange)
+                        Text("FOCUS")
+                            .font(.system(size: 10, weight: .heavy, design: .rounded))
+                            .foregroundStyle(.white.opacity(0.8))
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.leading, 10)
+
+                Rectangle()
+                    .fill(Color.clear)
+                    .frame(width: vm.closedNotchSize.width + 10)
+
+                HStack(spacing: 4) {
+                    if pomodoroVM.isCompleted {
+                        Text("Done! 🎉")
+                            .font(.system(size: 11, weight: .heavy, design: .rounded))
+                            .foregroundStyle(.white)
+                    } else {
+                        Text(pomodoroVM.timeFormatted)
+                            .font(.system(size: 11, weight: .heavy, design: .rounded))
+                            .monospacedDigit()
+                            .foregroundStyle(.white)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                .padding(.trailing, 10)
+            }
+            .frame(height: vm.effectiveClosedNotchHeight, alignment: .center)
+        } else {
+            HStack(spacing: 8) {
+                if pomodoroVM.isCompleted {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(.white)
+
+                    Text(pomodoroVM.celebrationMessage)
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
+                } else {
+                    Image(systemName: "timer")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(.orange)
+
+                    Text(pomodoroVM.timeFormatted)
+                        .font(.system(size: 12, weight: .heavy, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundStyle(.white)
+
+                    Text("FOCUS")
+                        .font(.system(size: 9, weight: .bold, design: .rounded))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Capsule().fill(Color.orange.opacity(0.35)))
+                        .foregroundStyle(.orange)
+                }
+            }
+            .frame(height: vm.effectiveClosedNotchHeight, alignment: .center)
+            .padding(.horizontal, 14)
+        }
+    }
+
 
     @ViewBuilder
     func BoringFaceAnimation() -> some View {
@@ -585,7 +756,16 @@ struct ContentView: View {
     }
 
     private func handleUpGesture(translation: CGFloat, phase: NSEvent.Phase) {
-        guard vm.notchState == .open && !vm.isHoveringCalendar else { return }
+        guard vm.notchState == .open,
+              !vm.isHoveringCalendar,
+              coordinator.currentView != .pad else {
+            if gestureProgress != .zero {
+                withAnimation(animationSpring) {
+                    gestureProgress = .zero
+                }
+            }
+            return
+        }
 
         withAnimation(animationSpring) {
             gestureProgress = (translation / Defaults[.gestureSensitivity]) * -20

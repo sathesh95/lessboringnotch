@@ -143,6 +143,8 @@ extension Defaults.Keys {
     static let showBatteryIndicator = Key<Bool>("showBatteryIndicator", default: true)
     static let showBatteryPercentage = Key<Bool>("showBatteryPercentage", default: true)
     static let showPowerStatusIcons = Key<Bool>("showPowerStatusIcons", default: true)
+    static let criticalBatteryWarning = Key<Bool>("criticalBatteryWarning", default: true)
+    static let testCriticalBatteryAlert = Key<Bool>("testCriticalBatteryAlert", default: false)
     
     // MARK: Downloads
     static let enableDownloadListener = Key<Bool>("enableDownloadListener", default: true)
@@ -174,6 +176,11 @@ extension Defaults.Keys {
     // MARK: Notch Pad (Scratchpad)
     static let boringPad = Key<Bool>("boringPad", default: true)
     static let openPadByDefault = Key<Bool>("openPadByDefault", default: false)
+
+    // MARK: Pomodoro Timer
+    static let boringPomodoro = Key<Bool>("boringPomodoro", default: true)
+    static let defaultPomodoroDuration = Key<Int>("defaultPomodoroDuration", default: 20)
+    static let pomodoroSoundEnabled = Key<Bool>("pomodoroSoundEnabled", default: true)
     
     // MARK: Calendar
     static let calendarSelectionState = Key<CalendarSelectionState>("calendarSelectionState", default: .all)
