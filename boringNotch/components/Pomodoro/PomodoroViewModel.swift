@@ -226,6 +226,18 @@ final class PomodoroViewModel: ObservableObject {
         return String(format: "%02d:%02d", mins, secs)
     }
 
+    var timeFormatted: String {
+        timeRemainingFormatted
+    }
+
+    func adjustCustomMinutes(_ delta: Int) {
+        setCustomMinutes(customMinutes + delta)
+    }
+
+    func triggerTestCelebration() {
+        handleTimerCompleted()
+    }
+
     var progress: Double {
         guard totalDurationSeconds > 0 else { return 0 }
         let elapsed = totalDurationSeconds - remainingSeconds
@@ -240,3 +252,4 @@ final class PomodoroViewModel: ObservableObject {
         state == .completed
     }
 }
+

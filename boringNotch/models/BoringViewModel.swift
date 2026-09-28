@@ -71,7 +71,8 @@ class BoringViewModel: NSObject, ObservableObject {
     }
 
     private func setupPomodoroObserver() {
-        PomodoroViewModel.shared.$isCompleted
+        PomodoroViewModel.shared.$state
+            .map { $0 == .completed }
             .removeDuplicates()
             .receive(on: RunLoop.main)
             .sink { [weak self] isCompleted in
