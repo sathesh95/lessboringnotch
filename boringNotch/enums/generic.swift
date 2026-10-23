@@ -30,6 +30,7 @@ public enum NotchViews {
     case pad
     case pomodoro
     case ytMusic
+    case tasks
 }
 
 enum SettingsEnum {

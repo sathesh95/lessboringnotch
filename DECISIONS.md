@@ -83,3 +83,19 @@ This document records the major architectural, design, and product decisions mad
   - Full Google account safety: zero credential exposure.
   - Full YouTube Premium ad-free audio playback.
 
+
+---
+
+## ADR 007: Local MCP Bridge for Tracker Tasks
+
+- **Date**: 2026-10-23
+- **Status**: Accepted
+- **Context**: The user wanted tasks from the Outsyd Task Tracker (a claude.ai artifact with its own shared database) visible and editable in the notch. The artifact's database has no public API, artifact pages cannot fetch localhost, and boringNotch cannot reach claude.ai's data directly.
+- **Decision**:
+  - Run a small, dependency-free Node MCP server (`tools/tracker-bridge/server.mjs`) registered as a user-level MCP server, so the Claude app starts it. The tracker page calls it as `host:tracker_bridge`: `push_snapshot` sends the owner's open tasks, `get_changes` (read-only) collects notch edits every 5 s, which the page writes to the database and acknowledges.
+  - The bridge also serves a localhost API (`127.0.0.1:51789`, header-gated, refuses requests with an `Origin`) that the Tasks tab polls every 3 s while visible. Notch edits are applied optimistically and queued in the bridge, persisted to `~/Library/Application Support/TrackerBridge/state.json`.
+  - The Tasks tab edits through inline pills instead of SwiftUI `Menu`s so the notch never loses hover while a menu is open.
+- **Consequences**:
+  - No cloud backend and no credentials in the app.
+  - Sync only happens while the tracker is open in the Claude desktop app for its owner; the notch shows the last snapshot otherwise.
+  - Other local tools can use the same localhost API.

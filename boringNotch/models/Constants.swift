@@ -184,6 +184,9 @@ extension Defaults.Keys {
 
     // MARK: YouTube Music Tab
     static let boringYTMusic = Key<Bool>("boringYTMusic", default: true)
+
+    // MARK: Tracker Tasks Tab
+    static let boringTasks = Key<Bool>("boringTasks", default: true)
     static let ytMusicSignedEmail = Key<String?>("ytMusicSignedEmail", default: nil)
     static let ytMusicIsPremium = Key<Bool>("ytMusicIsPremium", default: false)
     

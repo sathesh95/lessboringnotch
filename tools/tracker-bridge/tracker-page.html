@@ -1,0 +1,881 @@
+<title>Outsyd Task Tracker</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one sticky toolbar, then board groups stacked as aligned tables inside a single horizontal scroller. */
+:root {
+  --bg: #f3f5f8;
+  --surface: #ffffff;
+  --surface-2: #f7f8fb;
+  --line: #e1e5ec;
+  --fg: #18202e;
+  --muted: #5f6b7e;
+  --accent: #2f5bea;
+  --accent-fg: #ffffff;
+  --danger: #d93a3f;
+  --focus: #2f5bea;
+
+  /* Status fills: the pill carries its own text color, so these hold in both themes */
+  --s-none: #c4cad5;   --s-none-fg: #1f2633;
+  --s-research: #7a5ae0; --s-research-fg: #ffffff;
+  --s-working: #f4a62a; --s-working-fg: #2a1d05;
+  --s-review: #2b93d6;  --s-review-fg: #ffffff;
+  --s-paused: #9a8462;  --s-paused-fg: #ffffff;
+  --s-stuck: #e0484d;   --s-stuck-fg: #ffffff;
+  --s-complete: #23a566; --s-complete-fg: #ffffff;
+
+  --p-critical: #d93a3f; --p-high: #e0782a; --p-medium: #2b93d6; --p-low: #7d8796;
+
+  /* Board group colors */
+  --b0: #2f5bea; --b1: #23a566; --b2: #e0782a; --b3: #7a5ae0;
+  --b4: #d6407a; --b5: #1a9aa5; --b6: #b58a12; --b7: #5f6b7e; --b-1: #9aa3b2;
+
+  --font-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Instrument Sans", "Helvetica Neue", "Segoe UI", system-ui, sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1117; --surface: #161a22; --surface-2: #1b2029; --line: #272d39;
+    --fg: #e6e9ef; --muted: #98a2b3; --accent: #7d9bff; --accent-fg: #0e1117;
+    --danger: #ff6b6f; --focus: #7d9bff;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1117; --surface: #161a22; --surface-2: #1b2029; --line: #272d39;
+  --fg: #e6e9ef; --muted: #98a2b3; --accent: #7d9bff; --accent-fg: #0e1117;
+  --danger: #ff6b6f; --focus: #7d9bff;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.45;
+}
+body::before {
+  content: ""; position: fixed; inset: 0 0 auto;
+  height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg);
+}
+#app {
+  max-width: 1280px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 48px;
+}
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+
+/* Header + toolbar */
+.top {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+  background: var(--bg);
+  display: grid; gap: 12px; padding-block: 4px 14px;
+}
+.titlebar { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px; }
+h1 {
+  font-family: var(--font-display); font-weight: 700; font-size: 26px;
+  letter-spacing: -0.01em; margin: 0; text-wrap: balance;
+}
+.summary { margin: 0; color: var(--muted); font-variant-numeric: tabular-nums; }
+.summary b { color: var(--fg); font-weight: 600; }
+.summary .od { color: var(--danger); }
+.notch {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted);
+}
+.notch::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--s-complete); }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.toolbar input[type="search"], .toolbar select, .newboard input {
+  height: 34px; padding: 0 10px; border: 1px solid var(--line);
+  border-radius: 8px; background: var(--surface); min-width: 0;
+}
+.toolbar input[type="search"] { flex: 1 1 200px; max-width: 320px; }
+.chk { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); padding: 0 4px; user-select: none; }
+.spacer { flex: 1 1 0; }
+.btn {
+  height: 34px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--line);
+  background: var(--surface); cursor: pointer; font-weight: 500; white-space: nowrap;
+}
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.btn.primary:hover { filter: brightness(1.06); }
+.newboard { display: flex; flex-wrap: wrap; gap: 8px; }
+.newboard input { flex: 1 1 220px; max-width: 360px; }
+
+.banner {
+  margin-bottom: 14px; padding: 10px 14px; border-radius: 8px;
+  background: var(--surface); border: 1px solid var(--line); color: var(--muted);
+}
+
+/* Board groups */
+.scroller { overflow-x: auto; padding-bottom: 6px; }
+.group { min-width: 980px; margin-bottom: 28px; }
+.ghead {
+  display: flex; align-items: center; gap: 10px; padding: 0 2px 8px;
+}
+.caret {
+  width: 26px; height: 26px; border: 0; border-radius: 6px; background: transparent;
+  color: var(--g); cursor: pointer; font-size: 13px; display: grid; place-items: center;
+  transition: transform .15s;
+}
+.caret[aria-expanded="true"] { transform: rotate(90deg); }
+.caret:hover { background: var(--surface-2); }
+.gname {
+  font-family: var(--font-display); font-weight: 600; font-size: 18px; color: var(--g);
+  border: 1px solid transparent; border-radius: 6px; background: transparent;
+  padding: 2px 6px; width: auto; field-sizing: content; min-width: 6ch; max-width: 420px;
+}
+.gname:hover:not(:disabled) { border-color: var(--line); }
+.gname:focus { background: var(--surface); border-color: var(--line); }
+span.gname { display: inline-block; }
+.gcount { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+.gbar {
+  display: flex; height: 8px; width: 180px; border-radius: 4px; overflow: hidden;
+  background: var(--line); gap: 1px;
+}
+.gbar i { display: block; height: 100%; }
+.gdel {
+  margin-left: auto; border: 0; background: transparent; color: var(--muted);
+  font-size: 13px; cursor: pointer; padding: 4px 8px; border-radius: 6px;
+}
+.gdel:hover:not(:disabled) { color: var(--danger); background: var(--surface-2); }
+.gdel:disabled { opacity: .45; cursor: default; }
+.gdel.armed { color: var(--accent-fg); background: var(--danger); }
+
+table {
+  width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 0;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+  border-left: 4px solid var(--g); overflow: hidden;
+}
+th, td { border-bottom: 1px solid var(--line); padding: 0; height: 42px; vertical-align: middle; }
+tr:last-child td { border-bottom: 0; }
+td + td, th + th { border-left: 1px solid var(--line); }
+th {
+  background: var(--surface-2); height: 36px; text-align: left;
+  font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted);
+}
+th button {
+  all: unset; box-sizing: border-box; width: 100%; height: 100%; padding: 0 12px;
+  cursor: pointer; display: flex; align-items: center; gap: 4px;
+}
+th button:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+th button:hover { color: var(--fg); }
+th .arrow { font-size: 10px; }
+tbody tr:hover td { background: var(--surface-2); }
+
+td > input, td > select, td > button.owner {
+  width: 100%; height: 41px; border: 0; background: transparent; padding: 0 12px;
+}
+td > input:focus, td > select:focus { outline: 2px solid var(--focus); outline-offset: -2px; background: var(--surface); }
+.c-title input { font-weight: 500; text-overflow: ellipsis; }
+td input[type="date"] { font-family: var(--font-data); font-size: 13px; font-variant-numeric: tabular-nums; }
+td input[type="date"].overdue { color: var(--danger); font-weight: 500; }
+td select { cursor: pointer; appearance: none; -webkit-appearance: none; }
+td select:disabled, td input:disabled, td button:disabled { cursor: default; opacity: 1; color: inherit; }
+
+/* Status: a full-cell fill, the way a board column reads at a glance */
+td.c-status { padding: 4px; }
+td.c-status select {
+  height: 33px; border-radius: 6px; text-align: center; text-align-last: center;
+  font-weight: 600; font-size: 13px;
+  background: var(--c); color: var(--cf);
+}
+td.c-status select option { background: var(--surface); color: var(--fg); }
+
+/* Priority: a tinted chip with a dot */
+td.c-prio { padding: 6px 8px; }
+td.c-prio select {
+  height: 29px; border-radius: 999px; padding: 0 10px 0 24px; font-size: 13px; font-weight: 500;
+  background:
+    radial-gradient(circle at 12px 50%, var(--pc) 0 4px, transparent 4.5px),
+    color-mix(in srgb, var(--pc) 14%, transparent);
+}
+td.c-prio select[data-p=""] { background: transparent; color: var(--muted); padding-left: 10px; }
+
+button.owner {
+  display: flex; align-items: center; gap: 8px; cursor: pointer; text-align: left;
+}
+button.owner img { width: 24px; height: 24px; border-radius: 50%; flex: none; object-fit: cover; }
+button.owner span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+button.owner.empty span { color: var(--muted); }
+button.owner.empty::before {
+  content: ""; width: 22px; height: 22px; border-radius: 50%; flex: none;
+  border: 1.5px dashed var(--muted); opacity: .7;
+}
+button.owner:hover:not(:disabled) { background: var(--surface-2); }
+
+.c-act { text-align: center; }
+button.del {
+  border: 0; background: transparent; color: var(--muted); cursor: pointer;
+  width: 100%; height: 41px; font-size: 13px;
+}
+button.del:hover { color: var(--danger); }
+button.del.armed { color: var(--accent-fg); background: var(--danger); font-weight: 600; font-size: 12px; }
+
+tr.add td { height: 40px; }
+tr.add input { color: var(--fg); }
+tr.add input::placeholder { color: var(--muted); }
+tr.none td { color: var(--muted); padding: 0 12px; font-size: 13px; }
+
+/* Empty + loading */
+.empty {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+  padding: 28px; max-width: 620px; display: grid; gap: 10px;
+}
+.empty h2 { font-family: var(--font-display); font-size: 20px; margin: 0; }
+.empty p { margin: 0; color: var(--muted); max-width: 60ch; }
+.empty form { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.empty input { flex: 1 1 220px; height: 34px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.loading { color: var(--muted); padding: 24px 2px; }
+
+/* Owner picker */
+#picker {
+  position: fixed; z-index: 20; width: 260px; max-width: calc(100vw - 32px);
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(10, 16, 30, .18); padding: 8px; display: grid; gap: 6px;
+}
+#picker input { height: 32px; padding: 0 10px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface-2); }
+#plist { display: grid; gap: 2px; max-height: 260px; overflow-y: auto; }
+#plist button {
+  display: flex; align-items: center; gap: 8px; width: 100%; padding: 6px 8px;
+  border: 0; border-radius: 6px; background: transparent; cursor: pointer; text-align: left;
+}
+#plist button:hover, #plist button:focus-visible { background: var(--surface-2); }
+#plist img { width: 22px; height: 22px; border-radius: 50%; }
+#plist .none-dot { width: 22px; height: 22px; border-radius: 50%; border: 1.5px dashed var(--muted); flex: none; }
+#plist .hint { color: var(--muted); font-size: 13px; padding: 6px 8px; margin: 0; }
+
+#toast {
+  position: fixed; left: 50%; transform: translateX(-50%);
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px)); z-index: 30;
+  background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 8px;
+  max-width: calc(100vw - 32px); font-weight: 500;
+}
+
+@media (max-width: 560px) {
+  h1 { font-size: 22px; }
+  .toolbar input[type="search"] { max-width: none; flex-basis: 100%; }
+  .spacer { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .caret { transition: none; } }
+</style>
+
+<div id="app">
+  <header class="top">
+    <div class="titlebar">
+      <h1>Task Tracker</h1>
+      <p class="summary" id="summary">Loading…</p>
+      <span class="notch" id="notchStatus" hidden title="Your open tasks are synced to boringNotch on this Mac">Synced to notch</span>
+    </div>
+    <div class="toolbar">
+      <input type="search" id="q" placeholder="Search tasks" aria-label="Search tasks">
+      <select id="fStatus" aria-label="Filter by status"></select>
+      <select id="fOwner" aria-label="Filter by owner">
+        <option value="all">Everyone</option>
+        <option value="me">My tasks</option>
+        <option value="none">Unassigned</option>
+      </select>
+      <label class="chk"><input type="checkbox" id="fHide"> Hide complete</label>
+      <span class="spacer"></span>
+      <button class="btn primary" id="newBoardBtn" type="button" hidden>New board</button>
+    </div>
+    <form class="newboard" id="newBoardForm" hidden>
+      <input id="newBoardName" placeholder="Board name, e.g. Weekend meetups" aria-label="New board name" maxlength="80">
+      <button class="btn primary" type="submit">Create board</button>
+      <button class="btn" type="button" id="newBoardCancel">Cancel</button>
+    </form>
+  </header>
+  <div class="banner" id="banner" hidden></div>
+  <main id="grid"><p class="loading">Loading tasks…</p></main>
+</div>
+
+<div id="picker" hidden role="dialog" aria-label="Assign owner">
+  <input id="pq" placeholder="Search people" aria-label="Search people" autocomplete="off">
+  <div id="plist"></div>
+</div>
+<div id="toast" hidden role="status"></div>
+
+<script>
+const STATUSES = [
+  { k: "not_started", label: "Not started", v: "--s-none" },
+  { k: "research", label: "Research", v: "--s-research" },
+  { k: "working", label: "Working on it", v: "--s-working" },
+  { k: "review", label: "Review", v: "--s-review" },
+  { k: "paused", label: "Paused", v: "--s-paused" },
+  { k: "stuck", label: "Stuck", v: "--s-stuck" },
+  { k: "complete", label: "Complete", v: "--s-complete" },
+];
+const SMAP = Object.fromEntries(STATUSES.map(s => [s.k, s]));
+const SRANK = Object.fromEntries(STATUSES.map((s, i) => [s.k, i]));
+const PRIOS = [
+  { k: "critical", label: "Critical" },
+  { k: "high", label: "High" },
+  { k: "medium", label: "Medium" },
+  { k: "low", label: "Low" },
+];
+const PRANK = { critical: 0, high: 1, medium: 2, low: 3 };
+const RO_MSG = "You can view this tracker. Ask the owner for Contributor access to add or change tasks.";
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+function save(k, v) { try { localStorage.setItem("tt:" + k, JSON.stringify(v)); } catch (e) {} }
+function load(k, d) { try { const v = localStorage.getItem("tt:" + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }
+function today() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+const st = {
+  db: null, user: null, me: null,
+  canWrite: false, canWriteUnknown: false,
+  ready: { b: false, t: false },
+  boards: [], tasks: [], profiles: {},
+  q: "", fStatus: load("fStatus", "all"), fOwner: load("fOwner", "all"), hide: load("hide", false),
+  sort: load("sort", { key: null, dir: 1 }), collapsed: load("collapsed", {}),
+  dirty: false, picker: null,
+};
+
+/* ---------- toolbar ---------- */
+$("#fStatus").innerHTML = `<option value="all">All statuses</option>` +
+  STATUSES.map(s => `<option value="${s.k}">${s.label}</option>`).join("");
+$("#fStatus").value = st.fStatus;
+$("#fOwner").value = st.fOwner;
+$("#fHide").checked = st.hide;
+$("#q").addEventListener("input", e => { st.q = e.target.value; scheduleRender(); });
+$("#fStatus").addEventListener("change", e => { st.fStatus = e.target.value; save("fStatus", st.fStatus); scheduleRender(); });
+$("#fOwner").addEventListener("change", e => { st.fOwner = e.target.value; save("fOwner", st.fOwner); scheduleRender(); });
+$("#fHide").addEventListener("change", e => { st.hide = e.target.checked; save("hide", st.hide); scheduleRender(); });
+$("#newBoardBtn").addEventListener("click", () => {
+  $("#newBoardForm").hidden = false; $("#newBoardBtn").hidden = true; $("#newBoardName").focus();
+});
+$("#newBoardCancel").addEventListener("click", closeNewBoard);
+$("#newBoardForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const name = $("#newBoardName").value.trim();
+  if (!name) return;
+  createBoard(name);
+  closeNewBoard();
+});
+function closeNewBoard() {
+  $("#newBoardForm").hidden = true; $("#newBoardName").value = "";
+  $("#newBoardBtn").hidden = !st.canWrite;
+}
+
+function showBanner(msg) { const b = $("#banner"); b.textContent = msg; b.hidden = !msg; }
+let toastTimer;
+function toast(msg) {
+  const t = $("#toast"); t.textContent = msg; t.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 4000);
+}
+
+/* ---------- data helpers ---------- */
+const boardIds = () => new Set(st.boards.map(b => b.id));
+function tasksIn(boardId) {
+  const ids = boardIds();
+  return st.tasks.filter(t => boardId === "" ? !ids.has(t.board) : t.board === boardId);
+}
+const ownerName = id => (id && st.profiles[id] && st.profiles[id].name) || "";
+function visibleTasks(boardId) {
+  let list = tasksIn(boardId);
+  const q = st.q.trim().toLowerCase();
+  if (q) list = list.filter(t => (t.title || "").toLowerCase().includes(q));
+  if (st.fStatus !== "all") list = list.filter(t => (t.status || "not_started") === st.fStatus);
+  if (st.fOwner === "me") list = list.filter(t => st.me && t.owner === st.me);
+  if (st.fOwner === "none") list = list.filter(t => !t.owner);
+  if (st.hide) list = list.filter(t => t.status !== "complete");
+  const { key, dir } = st.sort;
+  const cmp = {
+    title: (a, b) => (a.title || "").localeCompare(b.title || ""),
+    owner: (a, b) => (ownerName(a.owner) || "￿").localeCompare(ownerName(b.owner) || "￿"),
+    status: (a, b) => SRANK[a.status || "not_started"] - SRANK[b.status || "not_started"],
+    priority: (a, b) => (PRANK[a.priority] ?? 9) - (PRANK[b.priority] ?? 9),
+    due: (a, b) => (a.due || "9999").localeCompare(b.due || "9999"),
+  }[key];
+  return list.sort((a, b) => (cmp ? cmp(a, b) * dir : 0) || ((a.createdAt || 0) - (b.createdAt || 0)));
+}
+
+/* ---------- render ---------- */
+function isEditing() {
+  if (st.picker) return true;
+  const a = document.activeElement;
+  if (!a || !$("#grid").contains(a)) return false;
+  if (a.matches("[data-add]")) return a.value.trim() !== "";
+  return a.matches("input, select");
+}
+function scheduleRender() {
+  if (isEditing()) { st.dirty = true; return; }
+  render();
+}
+$("#grid").addEventListener("focusout", () => setTimeout(() => {
+  if (st.dirty && !isEditing()) { st.dirty = false; render(); }
+}, 0));
+
+function updateSummary() {
+  if (!(st.ready.b && st.ready.t)) return;
+  const t = today();
+  const total = st.tasks.length;
+  const done = st.tasks.filter(x => x.status === "complete").length;
+  const overdue = st.tasks.filter(x => x.due && x.due < t && x.status !== "complete").length;
+  const mine = st.me ? st.tasks.filter(x => x.owner === st.me && x.status !== "complete").length : 0;
+  $("#summary").innerHTML =
+    `<b>${total}</b> task${total === 1 ? "" : "s"} · <b>${done}</b> complete · ` +
+    `<b class="${overdue ? "od" : ""}">${overdue}</b> overdue` +
+    (st.me ? ` · <b>${mine}</b> open on you` : "");
+}
+
+function render() {
+  updateSummary();
+  const grid = $("#grid");
+  if (!st.db) return;
+  if (!(st.ready.b && st.ready.t)) { grid.innerHTML = `<p class="loading">Loading tasks…</p>`; return; }
+  if (!st.boards.length && !st.tasks.length) { grid.innerHTML = emptyHTML(); return; }
+
+  const a = document.activeElement;
+  const focusAdd = a && a.matches && a.matches("[data-add]") ? a.dataset.add : null;
+  const sl = grid.querySelector(".scroller")?.scrollLeft || 0;
+
+  const groups = [...st.boards];
+  if (tasksIn("").length) groups.push({ id: "", name: "No board", color: -1, orphan: true });
+  grid.innerHTML = `<div class="scroller">${groups.map(groupHTML).join("")}</div>`;
+  grid.querySelector(".scroller").scrollLeft = sl;
+  if (focusAdd) grid.querySelector(`[data-add="${focusAdd}"]`)?.focus();
+  paintOwners();
+  resolveOwners();
+}
+
+function emptyHTML() {
+  return `<div class="empty">
+    <h2>No boards yet</h2>
+    <p>A board holds the tasks for one event or project, like “Weekend meetups” or “Instagram reels”. Create one, then add tasks under it.</p>
+    ${st.canWrite
+      ? `<form id="firstBoard"><input id="firstBoardName" placeholder="Board name" aria-label="Board name" maxlength="80"><button class="btn primary" type="submit">Create board</button></form>`
+      : `<p>Nothing has been added yet.</p>`}
+  </div>`;
+}
+
+function th(key, label) {
+  const on = st.sort.key === key;
+  const arrow = on ? (st.sort.dir === 1 ? "▲" : "▼") : "";
+  return `<th aria-sort="${on ? (st.sort.dir === 1 ? "ascending" : "descending") : "none"}"><button type="button" data-sort="${key}">${label} <span class="arrow">${arrow}</span></button></th>`;
+}
+
+function groupHTML(b) {
+  const all = tasksIn(b.id);
+  const vis = visibleTasks(b.id);
+  const open = !st.collapsed[b.id || "_orphan"];
+  const ro = st.canWrite ? "" : "disabled";
+  const bar = STATUSES.map(s => [s, all.filter(t => (t.status || "not_started") === s.k).length])
+    .filter(x => x[1])
+    .map(([s, n]) => `<i style="flex:${n};background:var(${s.v})" title="${s.label}: ${n}"></i>`).join("");
+  const name = b.orphan
+    ? `<span class="gname">No board</span>`
+    : `<input class="gname" data-board-name="${b.id}" value="${esc(b.name)}" aria-label="Board name" maxlength="80" ${ro}>`;
+  const del = st.canWrite && !b.orphan
+    ? `<button class="gdel" type="button" data-act="delboard" data-board="${b.id}" ${all.length ? `disabled title="Move or delete this board's tasks first"` : ""}>Delete board</button>`
+    : "";
+  const color = b.color >= 0 ? b.color % 8 : -1;
+  return `<section class="group" style="--g:var(--b${color})">
+    <div class="ghead">
+      <button class="caret" type="button" data-act="collapse" data-board="${b.id}" aria-expanded="${open}" aria-label="${open ? "Collapse" : "Expand"} ${esc(b.name)}">▶</button>
+      ${name}
+      <span class="gcount">${all.length} task${all.length === 1 ? "" : "s"}</span>
+      ${all.length ? `<div class="gbar" aria-hidden="true">${bar}</div>` : ""}
+      ${del}
+    </div>
+    ${open ? `<table>
+      <colgroup><col style="width:auto"><col style="width:180px"><col style="width:150px"><col style="width:130px"><col style="width:140px"><col style="width:170px"><col style="width:76px"></colgroup>
+      <thead><tr>${th("title", "Task")}${th("owner", "Owner")}${th("status", "Status")}${th("priority", "Priority")}${th("due", "Due date")}<th><button type="button" disabled style="cursor:default">Event / board</button></th><th></th></tr></thead>
+      <tbody>
+        ${vis.map(t => rowHTML(t, b)).join("")}
+        ${!vis.length && all.length ? `<tr class="none"><td colspan="7">No tasks here match the filters.</td></tr>` : ""}
+        ${st.canWrite && !b.orphan ? `<tr class="add"><td colspan="7"><input data-add="${b.id}" placeholder="+ Add task" aria-label="Add task to ${esc(b.name)}" maxlength="300"></td></tr>` : ""}
+      </tbody>
+    </table>` : ""}
+  </section>`;
+}
+
+function rowHTML(t, b) {
+  const ro = st.canWrite ? "" : "disabled";
+  const s = SMAP[t.status] ? t.status : "not_started";
+  const p = PRANK[t.priority] !== undefined ? t.priority : "";
+  const overdue = t.due && t.due < today() && s !== "complete";
+  const boardOpts = st.boards.map(x => `<option value="${x.id}"${x.id === t.board ? " selected" : ""}>${esc(x.name)}</option>`).join("")
+    + (b.orphan ? `<option value="" selected>No board</option>` : "");
+  return `<tr data-id="${t.id}">
+    <td class="c-title"><input data-f="title" value="${esc(t.title)}" aria-label="Task name" maxlength="300" ${ro}></td>
+    <td><button class="owner" type="button" data-act="owner" data-owner="${esc(t.owner || "")}" aria-label="Owner" ${ro}><img alt="" hidden><span></span></button></td>
+    <td class="c-status"><select data-f="status" aria-label="Status" style="--c:var(${SMAP[s].v});--cf:var(${SMAP[s].v}-fg)" ${ro}>
+      ${STATUSES.map(o => `<option value="${o.k}"${o.k === s ? " selected" : ""}>${o.label}</option>`).join("")}
+    </select></td>
+    <td class="c-prio"><select data-f="priority" data-p="${p}" aria-label="Priority" style="--pc:var(--p-${p || "low"})" ${ro}>
+      <option value=""${p === "" ? " selected" : ""}>Set priority</option>
+      ${PRIOS.map(o => `<option value="${o.k}"${o.k === p ? " selected" : ""}>${o.label}</option>`).join("")}
+    </select></td>
+    <td><input type="date" data-f="due" value="${esc(t.due || "")}" class="${overdue ? "overdue" : ""}" aria-label="Due date${overdue ? ", overdue" : ""}" ${ro}></td>
+    <td><select data-f="board" aria-label="Event / board" ${ro}>${boardOpts}</select></td>
+    <td class="c-act">${st.canWrite ? `<button class="del" type="button" data-act="del" aria-label="Delete task">Delete</button>` : ""}</td>
+  </tr>`;
+}
+
+function paintOwners() {
+  document.querySelectorAll("#grid [data-owner]").forEach(btn => {
+    const id = btn.dataset.owner, img = btn.querySelector("img"), span = btn.querySelector("span");
+    btn.classList.toggle("empty", !id);
+    if (!id) { img.hidden = true; span.textContent = "Unassigned"; return; }
+    const p = st.profiles[id];
+    if (p) { img.src = p.avatarUrl; img.hidden = false; }
+    span.textContent = (p && p.name) || "Someone";
+  });
+}
+async function resolveOwners() {
+  if (!st.user) return;
+  const ids = [...new Set(st.tasks.map(t => t.owner).filter(Boolean))];
+  if (!ids.length) return;
+  const ps = await st.user.profiles(ids);
+  Object.assign(st.profiles, ps);
+  paintOwners();
+}
+
+/* ---------- writes (one at a time per document) ---------- */
+const chains = {};
+function write(path, fn) {
+  const p = (chains[path] || Promise.resolve()).then(fn).catch(onWriteError);
+  chains[path] = p;
+  return p;
+}
+function onWriteError(e) {
+  const code = e && e.code;
+  if (code === "invalid_argument" && st.canWriteUnknown) {
+    st.canWrite = false; st.canWriteUnknown = false;
+    showBanner(RO_MSG); $("#newBoardBtn").hidden = true; render(); return;
+  }
+  toast(code === "quota_exceeded" ? "The tracker is full. Delete old tasks to make room."
+    : code === "resource_exhausted" ? "Too many changes at once. Wait a moment and try again."
+    : "That change didn't save. Check your connection and try again.");
+}
+function updateTask(id, fields) {
+  const path = "tasks/" + id;
+  return write(path, () => st.db.doc(path).update({ ...fields, updatedAt: Date.now(), updatedBy: st.me }));
+}
+function createTask(board, title) {
+  const ref = st.db.collection("tasks").doc();
+  return write(ref.path, () => ref.set({
+    title, board, status: "not_started", priority: "", owner: null, due: "",
+    createdAt: Date.now(), createdBy: st.me, updatedAt: Date.now(), updatedBy: st.me,
+  }));
+}
+function createBoard(name) {
+  const ref = st.db.collection("boards").doc();
+  const used = new Set(st.boards.map(b => b.color));
+  let color = 0; while (used.has(color) && color < 7) color++;
+  return write(ref.path, () => ref.set({ name, color, createdAt: Date.now(), createdBy: st.me }));
+}
+
+function armed(btn, label, fn) {
+  if (btn.dataset.armed) { fn(); return; }
+  const old = btn.textContent;
+  btn.dataset.armed = "1"; btn.textContent = label; btn.classList.add("armed");
+  setTimeout(() => {
+    if (!btn.isConnected) return;
+    delete btn.dataset.armed; btn.textContent = old; btn.classList.remove("armed");
+  }, 3000);
+}
+
+/* ---------- grid events ---------- */
+const grid = $("#grid");
+grid.addEventListener("click", e => {
+  const sortBtn = e.target.closest("[data-sort]");
+  if (sortBtn) {
+    const key = sortBtn.dataset.sort;
+    if (st.sort.key !== key) st.sort = { key, dir: 1 };
+    else if (st.sort.dir === 1) st.sort = { key, dir: -1 };
+    else st.sort = { key: null, dir: 1 };
+    save("sort", st.sort); render(); return;
+  }
+  const btn = e.target.closest("[data-act]");
+  if (!btn) return;
+  const act = btn.dataset.act;
+  if (act === "collapse") {
+    const k = btn.dataset.board || "_orphan";
+    st.collapsed[k] = !st.collapsed[k]; save("collapsed", st.collapsed); render();
+  } else if (act === "del") {
+    const id = btn.closest("tr").dataset.id;
+    armed(btn, "Confirm", () => write("tasks/" + id, () => st.db.doc("tasks/" + id).delete()));
+  } else if (act === "delboard") {
+    const id = btn.dataset.board;
+    armed(btn, "Click again to delete", () => write("boards/" + id, () => st.db.doc("boards/" + id).delete()));
+  } else if (act === "owner") {
+    openPicker(btn);
+  }
+});
+grid.addEventListener("change", e => {
+  const el = e.target;
+  const f = el.dataset.f;
+  if (!f || f === "title") return;
+  const id = el.closest("tr").dataset.id;
+  if (f === "status") {
+    const s = SMAP[el.value];
+    el.style.setProperty("--c", `var(${s.v})`); el.style.setProperty("--cf", `var(${s.v}-fg)`);
+  }
+  if (f === "priority") { el.dataset.p = el.value; el.style.setProperty("--pc", `var(--p-${el.value || "low"})`); }
+  updateTask(id, { [f]: el.value });
+  if (f === "board" || f === "due") el.blur();
+});
+grid.addEventListener("keydown", e => {
+  const el = e.target;
+  if (el.matches("[data-add]") && e.key === "Enter") {
+    e.preventDefault();
+    const title = el.value.trim();
+    if (!title) return;
+    el.value = "";
+    createTask(el.dataset.add, title);
+    scheduleRender();
+  } else if (el.matches('[data-f="title"], [data-board-name]')) {
+    if (e.key === "Enter") { e.preventDefault(); el.blur(); }
+    if (e.key === "Escape") { el.value = el.defaultValue; el.blur(); }
+  }
+});
+grid.addEventListener("focusout", e => {
+  const el = e.target;
+  if (el.matches('[data-f="title"]')) {
+    const v = el.value.trim();
+    if (!v) { el.value = el.defaultValue; return; }
+    if (v !== el.defaultValue) { el.defaultValue = v; updateTask(el.closest("tr").dataset.id, { title: v }); }
+  } else if (el.matches("[data-board-name]")) {
+    const v = el.value.trim();
+    if (!v) { el.value = el.defaultValue; return; }
+    if (v !== el.defaultValue) {
+      el.defaultValue = v;
+      const path = "boards/" + el.dataset.boardName;
+      write(path, () => st.db.doc(path).update({ name: v }));
+    }
+  }
+});
+grid.addEventListener("submit", e => {
+  if (e.target.id !== "firstBoard") return;
+  e.preventDefault();
+  const name = $("#firstBoardName").value.trim();
+  if (name) createBoard(name);
+});
+
+/* ---------- owner picker ---------- */
+const picker = $("#picker");
+function openPicker(btn) {
+  st.picker = { id: btn.closest("tr").dataset.id, btn };
+  picker.hidden = false;
+  const r = btn.getBoundingClientRect();
+  const w = picker.offsetWidth, h = picker.offsetHeight;
+  let top = r.bottom + 4;
+  if (top + h > innerHeight - 12) top = Math.max(12, r.top - h - 4);
+  picker.style.top = top + "px";
+  picker.style.left = Math.max(16, Math.min(r.left, innerWidth - w - 16)) + "px";
+  $("#pq").value = "";
+  $("#pq").focus();
+  runSearch("");
+}
+function closePicker(refocus) {
+  if (!st.picker) return;
+  const btn = st.picker.btn;
+  st.picker = null; picker.hidden = true;
+  if (refocus && btn.isConnected) btn.focus();
+  if (st.dirty && !isEditing()) { st.dirty = false; render(); }
+}
+async function runSearch(q) {
+  const hits = st.user ? await st.user.search(q) : [];
+  if (!st.picker) return;
+  const list = $("#plist");
+  list.replaceChildren();
+  const none = document.createElement("button");
+  none.type = "button"; none.dataset.pick = "";
+  none.innerHTML = `<span class="none-dot"></span><span>Unassigned</span>`;
+  list.append(none);
+  for (const h of hits) {
+    st.profiles[h.id] = h;
+    const b = document.createElement("button");
+    b.type = "button"; b.dataset.pick = h.id;
+    const img = document.createElement("img"); img.src = h.avatarUrl; img.alt = "";
+    const span = document.createElement("span"); span.textContent = h.name + (h.isMe ? " (you)" : "");
+    b.append(img, span); list.append(b);
+  }
+  if (!hits.length) {
+    const p = document.createElement("p"); p.className = "hint";
+    p.textContent = q ? "No one in your organization matches that name." : "Type a teammate's name to find them.";
+    list.append(p);
+  }
+}
+$("#pq").addEventListener("input", e => runSearch(e.target.value));
+$("#plist").addEventListener("click", e => {
+  const b = e.target.closest("[data-pick]");
+  if (!b || !st.picker) return;
+  const taskId = st.picker.id;
+  const owner = b.dataset.pick || null;
+  closePicker(true);
+  updateTask(taskId, { owner });
+});
+picker.addEventListener("keydown", e => { if (e.key === "Escape") closePicker(true); });
+document.addEventListener("mousedown", e => {
+  if (st.picker && !picker.contains(e.target) && !st.picker.btn.contains(e.target)) closePicker(false);
+});
+
+/* ---------- boot ---------- */
+(async () => {
+  if (!window.claude || !window.claude.use) {
+    showBanner("Open this tracker on claude.ai while signed in to see and edit tasks.");
+    $("#grid").innerHTML = ""; $("#summary").textContent = "";
+    return;
+  }
+  const [db, user] = await Promise.all([claude.use("db"), claude.use("user")]);
+  if (!db) {
+    showBanner("Sign in to claude.ai with your organization account to see this tracker.");
+    $("#grid").innerHTML = ""; $("#summary").textContent = "";
+    return;
+  }
+  st.db = db; st.user = user;
+  if (user) {
+    st.me = await user.id();
+    const can = await user.can("data.write");
+    st.canWrite = can !== false;
+    st.canWriteUnknown = can === null;
+  }
+  if (!st.canWrite) showBanner(RO_MSG);
+  $("#newBoardBtn").hidden = !st.canWrite;
+
+  const onErr = e => {
+    if (e && e.code === "revoked") { showBanner("This tracker is no longer available to you."); return; }
+    toast("Live updates stopped. Reload the page to reconnect.");
+  };
+  db.collection("boards").orderBy("createdAt").onSnapshot(snap => {
+    st.boards = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    st.ready.b = true; scheduleRender();
+  }, onErr);
+  db.collection("tasks").onSnapshot(snap => {
+    st.tasks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    st.ready.t = true; scheduleRender(); schedulePush();
+  }, onErr);
+
+  startBridge();
+})();
+
+/* ---------- boringNotch bridge ----------
+   For the owner, in the Claude desktop app, with the local tracker_bridge MCP server running:
+   push my open tasks to the notch and apply edits made there. Everyone else never calls it. */
+const BRIDGE = "host:tracker_bridge";
+const bridge = { mcp: null, on: false, stopped: false, acked: new Set(), applied: new Set(), lastPush: "", pushTimer: null, pullTimer: null, pushing: false };
+
+async function startBridge() {
+  if (!st.user || !st.canWrite || !(await st.user.isOwner())) return;
+  bridge.mcp = await claude.use("mcp");
+  if (!bridge.mcp) return;
+  schedulePush(true);
+  pullLoop();
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && bridge.stopped === "absent") {
+      bridge.stopped = false; schedulePush(true); pullLoop();
+    }
+  });
+}
+
+function setNotchStatus(on) {
+  bridge.on = on;
+  $("#notchStatus").hidden = !on;
+}
+
+function bridgeError(e) {
+  const code = e && e.code;
+  // Bridge not running or not inside the Claude app: go quiet until the viewer comes back to the page.
+  if (code === "server_not_connected" || code === "not_granted" || code === "capability_disabled" || code === "capability_removed") {
+    bridge.stopped = "absent"; setNotchStatus(false); return;
+  }
+  // Declined in the app or turned off for this page: stop for this visit.
+  if (code === "cancelled" || code === "not_in_manifest" || code === "blocked_by_policy" || code === "approval_required") {
+    bridge.stopped = "declined"; setNotchStatus(false); return;
+  }
+  setNotchStatus(false); // transient: the next pull or push tries again
+}
+
+function bridgeSnapshot() {
+  const ids = boardIds();
+  return {
+    me: st.me,
+    boards: st.boards.map(b => ({ id: b.id, name: b.name || "", color: b.color || 0 })),
+    tasks: st.tasks
+      .filter(t => st.me && t.owner === st.me && t.status !== "complete" && ids.has(t.board))
+      .map(t => ({ id: t.id, title: t.title || "", board: t.board, status: t.status || "not_started", priority: t.priority || "", due: t.due || "" })),
+  };
+}
+
+function schedulePush(force) {
+  if (!bridge.mcp || bridge.stopped || !(st.ready.b && st.ready.t)) return;
+  clearTimeout(bridge.pushTimer);
+  bridge.pushTimer = setTimeout(() => pushNow(force), 400);
+}
+
+async function pushNow(force) {
+  if (bridge.pushing) { schedulePush(force); return; }
+  const snap = bridgeSnapshot();
+  const key = JSON.stringify(snap);
+  if (!force && key === bridge.lastPush && !bridge.acked.size) return;
+  const acked = [...bridge.acked];
+  bridge.pushing = true;
+  try {
+    await bridge.mcp.callTool(BRIDGE, "push_snapshot", { ...snap, acked }, { cache: false });
+    bridge.lastPush = key;
+    acked.forEach(c => bridge.acked.delete(c));
+    setNotchStatus(true);
+  } catch (e) {
+    bridgeError(e);
+  } finally {
+    bridge.pushing = false;
+  }
+}
+
+async function pullLoop() {
+  clearTimeout(bridge.pullTimer);
+  if (!bridge.mcp || bridge.stopped) return;
+  if (document.visibilityState === "visible") {
+    try {
+      const res = await bridge.mcp.callTool(BRIDGE, "get_changes", {}, { cache: false });
+      const changes = (res.payload && res.payload.changes) || [];
+      if (changes.length) await applyNotchChanges(changes);
+      if (!bridge.on) schedulePush(true);
+    } catch (e) {
+      bridgeError(e);
+    }
+  }
+  if (!bridge.stopped) bridge.pullTimer = setTimeout(pullLoop, 5000);
+}
+
+const NOTCH_FIELDS = ["title", "status", "priority", "due", "board"];
+async function applyNotchChanges(changes) {
+  for (const c of changes) {
+    if (bridge.applied.has(c.cid)) { bridge.acked.add(c.cid); continue; }
+    const path = "tasks/" + c.id;
+    const fields = {};
+    for (const k of NOTCH_FIELDS) if (c.fields && k in c.fields) fields[k] = c.fields[k];
+    try {
+      if (c.op === "create") {
+        await st.db.doc(path).set({
+          title: "", board: "", status: "not_started", priority: "", due: "", ...fields,
+          owner: st.me, createdAt: Date.now(), createdBy: st.me, updatedAt: Date.now(), updatedBy: st.me,
+        });
+      } else if (c.op === "update") {
+        if (st.tasks.some(t => t.id === c.id)) await st.db.doc(path).update({ ...fields, updatedAt: Date.now(), updatedBy: st.me });
+      } else if (c.op === "delete") {
+        await st.db.doc(path).delete();
+      }
+      bridge.applied.add(c.cid);
+      bridge.acked.add(c.cid);
+    } catch (e) {
+      onWriteError(e);
+      return; // keep the rest queued in the bridge for the next pull
+    }
+  }
+  schedulePush(true);
+}
+</script>

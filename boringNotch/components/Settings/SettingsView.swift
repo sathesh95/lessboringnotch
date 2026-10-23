@@ -60,6 +60,9 @@ struct SettingsView: View {
                 NavigationLink(value: "YouTube Music") {
                     Label("YouTube Music", systemImage: "music.note")
                 }
+                NavigationLink(value: "Tasks") {
+                    Label("Tasks", systemImage: "checklist")
+                }
                 NavigationLink(value: "Shortcuts") {
                     Label("Shortcuts", systemImage: "keyboard")
                 }
@@ -100,6 +103,8 @@ struct SettingsView: View {
                     PomodoroSettings()
                 case "YouTube Music":
                     YouTubeMusicSettings()
+                case "Tasks":
+                    TrackerTasksSettings()
                 case "Shortcuts":
                     Shortcuts()
                 case "Extensions":
@@ -1197,6 +1202,61 @@ struct YouTubeMusicSettings: View {
         }
         .accentColor(.effectiveAccent)
         .navigationTitle("YouTube Music")
+    }
+}
+
+struct TrackerTasksSettings: View {
+    @ObservedObject var tasksVM = TrackerTasksViewModel.shared
+
+    var body: some View {
+        Form {
+            Section {
+                Defaults.Toggle(key: .boringTasks) {
+                    Text("Enable Tasks tab")
+                }
+            } header: {
+                Text("General")
+            } footer: {
+                Text("Shows your open tasks from the Outsyd Task Tracker in the notch. You can complete, edit, add and delete them there.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+
+            Section {
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Tracker bridge")
+                            .font(.headline)
+                        Text(bridgeStatusText)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Button("Check") {
+                        Task { await tasksVM.refresh() }
+                    }
+                    .buttonStyle(.bordered)
+                }
+            } header: {
+                Text("Connection")
+            } footer: {
+                Text("The Claude app starts the bridge (http://127.0.0.1:\(TrackerBridgeClient.port)). Keep the Task Tracker open in the Claude app to sync changes both ways.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+        }
+        .task { await tasksVM.refresh() }
+        .accentColor(.effectiveAccent)
+        .navigationTitle("Tasks")
+    }
+
+    private var bridgeStatusText: String {
+        switch tasksVM.link {
+        case .live: return "Connected and synced with the tracker"
+        case .waiting: return "Running. Open the Task Tracker in the Claude app to sync."
+        case .offline: return "Not running. Open the Claude app to start it."
+        case .unknown: return "Checking…"
+        }
     }
 }
 

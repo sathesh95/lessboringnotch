@@ -385,6 +385,8 @@ struct ContentView: View {
                         PomodoroTimerView()
                     case .ytMusic:
                         YouTubeMusicTabView()
+                    case .tasks:
+                        TrackerTasksView()
                     }
                 }
                 .animation(.smooth(duration: 0.25), value: coordinator.currentView)
@@ -761,7 +763,8 @@ struct ContentView: View {
         guard vm.notchState == .open,
               !vm.isHoveringCalendar,
               coordinator.currentView != .pad,
-              coordinator.currentView != .ytMusic else {
+              coordinator.currentView != .ytMusic,
+              coordinator.currentView != .tasks else {
             if gestureProgress != .zero {
                 withAnimation(animationSpring) {
                     gestureProgress = .zero

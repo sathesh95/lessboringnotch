@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		B0D000000000000000000003 /* TrackerTasksViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0D000000000000000000002 /* TrackerTasksViewModel.swift */; };
+		B0D000000000000000000005 /* TrackerTasksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0D000000000000000000004 /* TrackerTasksView.swift */; };
 		B0C000000000000000000003 /* InnerTubeTrack.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0C000000000000000000002 /* InnerTubeTrack.swift */; };
 		B0C000000000000000000005 /* InnerTubeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0C000000000000000000004 /* InnerTubeService.swift */; };
 		B0C000000000000000000007 /* YouTubePlayerEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0C000000000000000000006 /* YouTubePlayerEngine.swift */; };
@@ -195,6 +197,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		B0D000000000000000000002 /* TrackerTasksViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackerTasksViewModel.swift; sourceTree = "<group>"; };
+		B0D000000000000000000004 /* TrackerTasksView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackerTasksView.swift; sourceTree = "<group>"; };
 		B0C000000000000000000002 /* InnerTubeTrack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InnerTubeTrack.swift; sourceTree = "<group>"; };
 		B0C000000000000000000004 /* InnerTubeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InnerTubeService.swift; sourceTree = "<group>"; };
 		B0C000000000000000000006 /* YouTubePlayerEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubePlayerEngine.swift; sourceTree = "<group>"; };
@@ -527,6 +531,7 @@
 				B186542E2C6F453B000B926A /* Music */,
 				B0B000000000000000000001 /* Pomodoro */,
 				B0C000000000000000000001 /* YouTubeMusic */,
+				B0D000000000000000000001 /* Tasks */,
 				14D570BF2C5EA5870011E668 /* AnimatedFace.swift */,
 				14288DE72C6E01C800B9F80C /* ProgressIndicator.swift */,
 				14D570C12C5EAFBF0011E668 /* EmptyState.swift */,
@@ -536,6 +541,15 @@
 				B1F747F82EC7E94000F841DB /* LottieView.swift */,
 			);
 			path = components;
+			sourceTree = "<group>";
+		};
+		B0D000000000000000000001 /* Tasks */ = {
+			isa = PBXGroup;
+			children = (
+				B0D000000000000000000002 /* TrackerTasksViewModel.swift */,
+				B0D000000000000000000004 /* TrackerTasksView.swift */,
+			);
+			path = Tasks;
 			sourceTree = "<group>";
 		};
 		B0C000000000000000000001 /* YouTubeMusic */ = {
@@ -1131,6 +1145,8 @@
 				B0C000000000000000000009 /* GoogleSignInSheet.swift in Sources */,
 				B0C00000000000000000000B /* YouTubeMusicTabViewModel.swift in Sources */,
 				B0C00000000000000000000D /* YouTubeMusicTabView.swift in Sources */,
+				B0D000000000000000000003 /* TrackerTasksViewModel.swift in Sources */,
+				B0D000000000000000000005 /* TrackerTasksView.swift in Sources */,
 				1132E5142E777B920068732D /* YouTubeMusicNetworking.swift in Sources */,
 				1132E5122E777B6E0068732D /* YouTubeMusicModels.swift in Sources */,
 				11CFC65F2E097F2F00748C80 /* OnboardingView.swift in Sources */,

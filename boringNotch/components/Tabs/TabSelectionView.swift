@@ -21,6 +21,7 @@ struct TabSelectionView: View {
     @Default(.boringPad) var boringPad
     @Default(.boringPomodoro) var boringPomodoro
     @Default(.boringYTMusic) var boringYTMusic
+    @Default(.boringTasks) var boringTasks
     @Namespace var animation
 
     var visibleTabs: [TabModel] {
@@ -36,6 +37,9 @@ struct TabSelectionView: View {
         }
         if boringYTMusic {
             list.append(TabModel(label: "Music", icon: "music.note", view: .ytMusic))
+        }
+        if boringTasks {
+            list.append(TabModel(label: "Tasks", icon: "checklist", view: .tasks))
         }
         return list
     }
